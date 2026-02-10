@@ -43,6 +43,18 @@ app.use(cors({
         if (origin.match(/^http:\/\/localhost:\d+$/)) {
             return callback(null, true);
         }
+        // Allow Railway, Vercel, Netlify, and custom domains
+        if (origin.match(/\.up\.railway\.app$/) ||
+            origin.match(/\.vercel\.app$/) ||
+            origin.match(/\.netlify\.app$/) ||
+            origin.match(/\.infinityfreeapp\.com$/) ||
+            origin === process.env.CORS_ORIGIN) {
+            return callback(null, true);
+        }
+        // In production, allow all origins (for demo purposes)
+        if (process.env.NODE_ENV === 'production') {
+            return callback(null, true);
+        }
         callback(new Error('Not allowed by CORS'));
     },
     credentials: true
