@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const { testConnection } = require('./config/database');
+const { createMissingTable } = require('./init_db');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -22,6 +23,7 @@ const offerwallRoutes = require('./routes/offerwalls');
 const cronJobs = require('./cron/jobs');
 
 const app = express();
+app.set('trust proxy', 1); // Trust Railway's proxy for rate limiting
 
 // Security middleware
 app.use(helmet({
@@ -111,6 +113,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
+    await createMissingTable();
     await testConnection();
 
     // Start cron jobs
