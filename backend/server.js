@@ -116,9 +116,11 @@ const startServer = async () => {
     // Start cron jobs
     cronJobs.start();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`✅ Database connected successfully`);
+        console.log(`⏰ Cron jobs started`);
         console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📍 API: http://localhost:${PORT}/api`);
+        console.log(`📍 Listening on 0.0.0.0:${PORT}`);
     });
 };
 
