@@ -5,4 +5,4 @@ builder = "nixpacks"
 providers = ["node"]
 
 [deploy]
-startCommand = "cd backend && node server.js"
+startCommand = "node server.js"
