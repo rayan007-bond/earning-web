@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { User, Mail, Lock, Eye, EyeOff, Gift, Loader2 } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { register } = useAuth();
@@ -226,3 +226,16 @@ export default function RegisterPage() {
         </div>
     );
 }
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+                <Loader2 size={40} className="animate-spin text-[var(--primary)]" />
+            </div>
+        }>
+            <RegisterContent />
+        </Suspense>
+    );
+}
+
