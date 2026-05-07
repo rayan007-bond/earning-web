@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
@@ -25,7 +25,7 @@ const WALLET_ADDRESSES = {
     easypaisa: '03001234567',
 };
 
-export default function VIPPaymentPage() {
+function VIPPaymentContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { token, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -305,5 +305,17 @@ export default function VIPPaymentPage() {
                 </form>
             </main>
         </div>
+    );
+}
+
+export default function VIPPaymentPage() {
+    return (
+        <Suspense fallback={
+            <div className="mobile-container flex items-center justify-center min-h-screen">
+                <div className="animate-spin w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full" />
+            </div>
+        }>
+            <VIPPaymentContent />
+        </Suspense>
     );
 }
