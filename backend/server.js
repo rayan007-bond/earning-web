@@ -129,7 +129,7 @@ const startServer = async () => {
     });
 };
 
-// Auto-create admin user if none exists (works on fresh databases)
+// Auto-create or fix admin user on startup (works on fresh AND existing databases)
 async function ensureAdminExists() {
     try {
         // Ensure admin_users table exists
@@ -145,19 +145,27 @@ async function ensureAdminExists() {
             )
         `);
 
-        // Check if any admin exists
-        const [admins] = await pool.query('SELECT id FROM admin_users LIMIT 1');
+        const email = process.env.ADMIN_EMAIL || 'admin@gpt-earn.com';
+        const password = process.env.ADMIN_PASSWORD || 'admin123';
+        const hash = await bcrypt.hash(password, 10);
+
+        // Check if admin with this email exists
+        const [admins] = await pool.query('SELECT id FROM admin_users WHERE email = ?', [email]);
+        
         if (admins.length === 0) {
-            const email = process.env.ADMIN_EMAIL || 'admin@gpt-earn.com';
-            const password = process.env.ADMIN_PASSWORD || 'admin123';
-            const hash = await bcrypt.hash(password, 10);
+            // Create new admin
             await pool.query(
                 'INSERT INTO admin_users (email, username, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
                 [email, 'SuperAdmin', hash, 'super_admin', 'active']
             );
             console.log(`👤 Admin user created: ${email}`);
         } else {
-            console.log('👤 Admin user already exists');
+            // Always reset password & ensure active status on startup
+            await pool.query(
+                'UPDATE admin_users SET password_hash = ?, status = ? WHERE email = ?',
+                [hash, 'active', email]
+            );
+            console.log(`👤 Admin user verified & password synced: ${email}`);
         }
     } catch (error) {
         console.error('⚠️  Admin setup warning:', error.message);
