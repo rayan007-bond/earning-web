@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/Toast';
 import {
     Users, DollarSign, Clock, Crown,
     TrendingUp, Wallet, ChevronRight, LogOut,
-    LayoutDashboard, ListTodo, UserCog, CreditCard, Settings, Send
+    LayoutDashboard, ListTodo, UserCog, CreditCard, Settings, Send, Gift
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -21,6 +21,7 @@ interface DashboardStats {
 const navItems = [
     { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/admin/tasks', icon: ListTodo, label: 'Tasks' },
+    { href: '/admin/offerwalls', icon: Gift, label: 'Offerwalls' },
     { href: '/admin/users', icon: UserCog, label: 'Users' },
     { href: '/admin/withdrawals', icon: CreditCard, label: 'Withdrawals' },
     { href: '/admin/vip-requests', icon: Crown, label: 'VIP Requests' },
