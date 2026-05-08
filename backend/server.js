@@ -2,9 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-const { testConnection } = require('./config/database');
+const { pool, testConnection } = require('./config/database');
 const { createMissingTable } = require('./init_db');
 
 // Import routes
@@ -115,6 +116,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     await createMissingTable();
     await testConnection();
+    await ensureAdminExists();
 
     // Start cron jobs
     cronJobs.start();
@@ -126,6 +128,41 @@ const startServer = async () => {
         console.log(`📍 Listening on 0.0.0.0:${PORT}`);
     });
 };
+
+// Auto-create admin user if none exists (works on fresh databases)
+async function ensureAdminExists() {
+    try {
+        // Ensure admin_users table exists
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS admin_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                username VARCHAR(100) NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role ENUM('admin', 'super_admin') DEFAULT 'super_admin',
+                status ENUM('active', 'inactive') DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Check if any admin exists
+        const [admins] = await pool.query('SELECT id FROM admin_users LIMIT 1');
+        if (admins.length === 0) {
+            const email = process.env.ADMIN_EMAIL || 'admin@gpt-earn.com';
+            const password = process.env.ADMIN_PASSWORD || 'admin123';
+            const hash = await bcrypt.hash(password, 10);
+            await pool.query(
+                'INSERT INTO admin_users (email, username, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+                [email, 'SuperAdmin', hash, 'super_admin', 'active']
+            );
+            console.log(`👤 Admin user created: ${email}`);
+        } else {
+            console.log('👤 Admin user already exists');
+        }
+    } catch (error) {
+        console.error('⚠️  Admin setup warning:', error.message);
+    }
+}
 
 startServer();
 
