@@ -11,7 +11,8 @@ import { api } from '@/lib/api';
 import {
   Wallet, TrendingUp, Clock, Bell, ChevronRight,
   Target, Users, Gift, Zap, Play, Shield, Star,
-  DollarSign, ArrowRight, Sparkles, Check, Crown
+  DollarSign, ArrowRight, Sparkles, Check, Crown,
+  Award, Headset, Globe
 } from 'lucide-react';
 
 interface DashboardData {
@@ -32,68 +33,76 @@ interface DashboardData {
   unreadNotifications: number;
 }
 
-// Auto-rotating Testimonial Carousel Component
-function TestimonialCarousel({ testimonials }: { testimonials: { name: string; amount: string; text: string }[] }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-    }, 4000); // Change every 4 seconds
-
-    return () => clearInterval(interval);
-  }, [testimonials.length]);
-
-  const t = testimonials[currentIndex];
+// Animated Marquee Component
+function LivePayoutsMarquee() {
+  const payouts = [
+    { name: 'Alex M.', amount: '$50.00', method: 'PayPal', time: '2m ago' },
+    { name: 'Sarah K.', amount: '$15.50', method: 'Crypto', time: '5m ago' },
+    { name: 'John D.', amount: '$100.00', method: 'Bank', time: '12m ago' },
+    { name: 'Emma W.', amount: '$25.00', method: 'PayPal', time: '15m ago' },
+    { name: 'Michael R.', amount: '$10.00', method: 'Crypto', time: '18m ago' },
+  ];
 
   return (
-    <section className="px-4 py-8">
+    <div className="w-full overflow-hidden py-4 bg-white/5 backdrop-blur-sm border-y border-white/10 my-8 flex">
+      <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
+        {[...payouts, ...payouts].map((p, i) => (
+          <div key={i} className="flex items-center gap-3 px-6 shrink-0">
+            <div className="w-8 h-8 rounded-full gradient-success flex items-center justify-center text-white text-xs font-bold">
+              {p.name.charAt(0)}
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-white whitespace-nowrap">
+                {p.name} cashed out <span className="text-[var(--success)]">{p.amount}</span>
+              </div>
+              <div className="text-xs text-white/50">{p.method} • {p.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Horizontal Testimonial Component
+function TestimonialCarousel({ testimonials }: { testimonials: { name: string; amount: string; text: string }[] }) {
+  return (
+    <section className="px-4 py-8 overflow-hidden">
       <h3 className="text-2xl font-bold text-center mb-6">
         What Users Say
       </h3>
 
-      {/* Carousel Container */}
-      <div className="relative overflow-hidden">
-        <div
-          className="transition-all duration-500 ease-in-out"
-          key={currentIndex}
-        >
-          <div className="card bg-gradient-to-br from-[var(--card-bg)] to-[var(--primary)]/5 border border-[var(--card-border)]">
-            {/* Quote Icon */}
-            <div className="text-4xl text-[var(--primary)]/20 mb-2">"</div>
+      <div className="w-full overflow-hidden relative">
+        <div className="flex w-max animate-marquee gap-4 pb-8 hover:[animation-play-state:paused] px-2">
+          {[...testimonials, ...testimonials].map((t, i) => (
+            <div key={i} className="w-[85vw] max-w-[350px] shrink-0">
+              <div className="p-6 rounded-3xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 h-full flex flex-col relative overflow-hidden group hover:border-white/20 transition-all">
+                {/* Background accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/10 rounded-full blur-[50px] -mr-16 -mt-16 transition-opacity group-hover:bg-[var(--primary)]/20" />
 
-            {/* Testimonial Text */}
-            <p className="text-lg font-medium mb-4 animate-fadeIn">{t.text}</p>
+                {/* Quote Icon */}
+                <div className="text-5xl text-[var(--primary)]/40 font-serif leading-none mb-2">"</div>
 
-            {/* User Info */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-lg">
-                {t.name.charAt(0)}
-              </div>
-              <div>
-                <div className="font-semibold">{t.name}</div>
-                <div className="text-sm text-[var(--success)] font-medium">Earned {t.amount}</div>
-              </div>
-              <div className="ml-auto flex text-amber-500 gap-0.5">
-                {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} fill="currentColor" />)}
+                {/* Testimonial Text */}
+                <p className="text-[15px] text-white/80 font-medium mb-6 leading-relaxed flex-1 relative z-10">{t.text}</p>
+
+                {/* User Info */}
+                <div className="flex items-center gap-3 mt-auto pt-4 border-t border-white/10 relative z-10">
+                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-[var(--primary)]/30">
+                    {t.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-white truncate">{t.name}</div>
+                    <div className="text-xs text-[var(--success)] font-medium">Earned {t.amount}</div>
+                  </div>
+                  <div className="flex text-amber-500 gap-0.5 shrink-0">
+                    {[1, 2, 3, 4, 5].map(s => <Star key={s} size={12} fill="currentColor" />)}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
-      </div>
-
-      {/* Navigation Dots */}
-      <div className="flex justify-center gap-2 mt-4">
-        {testimonials.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentIndex(i)}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === currentIndex
-              ? 'bg-[var(--primary)] w-6'
-              : 'bg-[var(--card-border)] hover:bg-[var(--muted)]'
-              }`}
-          />
-        ))}
       </div>
     </section>
   );
@@ -144,10 +153,10 @@ function LandingPage() {
   ];
 
   const stats = [
-    { value: '$2.5M+', label: 'Paid to Users', icon: DollarSign },
-    { value: '500K+', label: 'Active Users', icon: Users },
-    { value: '4.8★', label: 'User Rating', icon: Star },
-    { value: '24/7', label: 'Support', icon: Shield }
+    { value: '$2.5M+', label: 'Paid to Users', icon: Wallet },
+    { value: '500K+', label: 'Active Users', icon: Globe },
+    { value: '4.8★', label: 'User Rating', icon: Award },
+    { value: '24/7', label: 'Support', icon: Headset }
   ];
 
   const testimonials = [
@@ -264,12 +273,12 @@ function LandingPage() {
         </div>
 
         {/* Floating payment methods */}
-        <div className="relative z-10 px-4 pb-8">
-          <div className="flex justify-center gap-3 flex-wrap">
+        <div className="relative z-10 px-2 sm:px-4 pb-8 w-full max-w-full">
+          <div className="flex justify-center items-center gap-1.5 sm:gap-3 flex-nowrap w-full">
             {paymentMethods.map((method, i) => (
               <span
                 key={i}
-                className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/70 backdrop-blur-sm"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/5 border border-white/10 text-[10px] sm:text-sm font-medium text-white/80 backdrop-blur-sm whitespace-nowrap shadow-lg shadow-black/20"
               >
                 {method}
               </span>
@@ -278,21 +287,34 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Bar - Glassmorphism */}
-      <section className="px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {stats.map((stat, i) => (
-                <div key={i} className="text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--primary)]/20 to-purple-500/20 flex items-center justify-center mx-auto mb-3">
-                    <stat.icon size={24} className="text-[var(--primary)]" />
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold text-white mb-1">{stat.value}</div>
-                  <div className="text-xs text-white/50">{stat.label}</div>
+      {/* Animated Marquee Section */}
+      <LivePayoutsMarquee />
+
+      {/* Stats Section - Compact Dashboard Style */}
+      <section className="px-4 py-8 relative">
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            {stats.map((stat, i) => (
+              <div 
+                key={i} 
+                className="group p-3 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3 sm:gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300"
+              >
+                {/* Soft Icon Container */}
+                <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:bg-[var(--primary)]/20">
+                  <stat.icon className="text-[var(--primary)] w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
                 </div>
-              ))}
-            </div>
+
+                {/* Text Content */}
+                <div className="flex flex-col min-w-0 flex-1 justify-center">
+                  <div className="text-[17px] sm:text-xl font-bold text-white tracking-tight leading-none mb-1 whitespace-nowrap">
+                    {stat.value}
+                  </div>
+                  <div className="text-[8.5px] sm:text-[10px] font-bold text-white/40 uppercase tracking-widest leading-tight group-hover:text-white/60 transition-colors">
+                    {stat.label}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -307,28 +329,32 @@ function LandingPage() {
             Simple ways to earn money online, no experience required
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {features.map((feature, i) => (
-              <div
-                key={i}
-                className="group p-6 rounded-2xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 hover:border-white/20 transition-all hover:scale-[1.02] cursor-pointer"
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center flex-shrink-0 shadow-lg`}>
-                    <feature.icon className="text-white" size={28} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-lg text-white">{feature.title}</h3>
-                      <span className="text-xs font-semibold text-[var(--success)] bg-[var(--success)]/10 px-2 py-1 rounded-full">
+          <div className="w-full overflow-hidden relative">
+            <div className="flex w-max animate-marquee gap-4 pb-8 hover:[animation-play-state:paused] px-2">
+              {[...features, ...features].map((feature, i) => (
+                <div
+                  key={i}
+                  className="w-[85vw] max-w-[320px] shrink-0 group p-6 rounded-3xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 hover:border-white/20 transition-all cursor-pointer relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -mr-16 -mt-16 transition-opacity group-hover:bg-white/10" />
+                  
+                  <div className="flex flex-col gap-4 h-full relative z-10">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg shadow-black/20`}>
+                        <feature.icon className="text-white" size={28} />
+                      </div>
+                      <span className="text-[11px] font-bold text-[var(--success)] bg-[var(--success)]/10 px-3 py-1.5 rounded-full uppercase tracking-wider">
                         {feature.amount}
                       </span>
                     </div>
-                    <p className="text-sm text-white/50">{feature.description}</p>
+                    <div className="flex-1 flex flex-col">
+                      <h3 className="font-bold text-xl text-white mb-2">{feature.title}</h3>
+                      <p className="text-sm text-white/60 leading-relaxed mt-auto">{feature.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -384,7 +410,7 @@ function LandingPage() {
       <TestimonialCarousel testimonials={testimonials} />
 
       {/* Final CTA */}
-      <section className="px-4 py-16 text-center">
+      <section className="px-4 pt-16 pb-8 text-center">
         <div className="max-w-2xl mx-auto">
           <div className="text-6xl mb-6">🚀</div>
           <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -405,20 +431,45 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 px-4 py-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--primary)] to-purple-600 flex items-center justify-center">
-              <Zap className="text-white" size={16} />
+      {/* Sleek Minimal Footer */}
+      <footer className="relative border-t border-white/5 bg-[#05050a] pt-12 pb-8 overflow-hidden">
+        {/* Soft bottom glow */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[80vw] h-[300px] bg-[var(--primary)]/5 rounded-full blur-[120px] pointer-events-none" />
+        
+        <div className="max-w-4xl mx-auto px-6 relative z-10 flex flex-col items-center text-center">
+          
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-purple-600 flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
+              <Zap className="text-white w-5 h-5" />
             </div>
-            <span className="font-bold text-lg text-white">
-              <span className="text-[var(--primary)]">GPT</span>Earn
+            <span className="font-black text-2xl text-white tracking-tight">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-purple-400">GPT</span>Earn
             </span>
           </div>
-          <p className="text-sm text-white/40">
-            © 2024 GPT Earn. All rights reserved.
-          </p>
+
+          {/* Minimal Links */}
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 mb-10">
+            <a href="#" className="text-sm font-bold text-white/40 hover:text-white transition-colors">How it Works</a>
+            <a href="#" className="text-sm font-bold text-white/40 hover:text-white transition-colors">Offerwalls</a>
+            <a href="#" className="text-sm font-bold text-white/40 hover:text-white transition-colors">Terms</a>
+            <a href="#" className="text-sm font-bold text-white/40 hover:text-white transition-colors">Privacy</a>
+            <a href="#" className="text-sm font-bold text-white/40 hover:text-white transition-colors">Support</a>
+          </div>
+
+          {/* Divider */}
+          <div className="w-24 h-[2px] bg-gradient-to-r from-transparent via-white/10 to-transparent mb-8" />
+
+          {/* Socials & Copyright */}
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-6">
+            <p className="text-[10px] sm:text-xs text-white/30 font-black tracking-[0.2em] uppercase">
+              © {new Date().getFullYear()} GPT EARN.
+            </p>
+            <div className="flex items-center gap-5 text-white/30">
+              <a href="#" className="hover:text-[var(--primary)] hover:scale-110 transition-all"><Globe size={18} /></a>
+              <a href="#" className="hover:text-[var(--primary)] hover:scale-110 transition-all"><Shield size={18} /></a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
