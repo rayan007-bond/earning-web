@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import {
-    ArrowLeft, Save, Loader2, Settings,
+    Save, Loader2, Settings,
     DollarSign, Clock, Users, Crown
 } from 'lucide-react';
 
@@ -94,12 +94,9 @@ export default function AdminSettingsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)] p-4 md:p-8">
+        <div className="p-4 md:p-8">
             <div className="max-w-2xl mx-auto">
                 <div className="flex items-center gap-3 mb-6">
-                    <button onClick={() => router.push('/admin/dashboard')} className="p-2">
-                        <ArrowLeft size={20} />
-                    </button>
                     <h1 className="text-2xl font-bold">Settings</h1>
                 </div>
 

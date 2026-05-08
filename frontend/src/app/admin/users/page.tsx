@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import {
-    ArrowLeft, Search, Crown, Ban,
+    Search, Crown, Ban,
     CheckCircle, XCircle, DollarSign, Bell, X
 } from 'lucide-react';
 
@@ -161,12 +161,9 @@ export default function AdminUsersPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)] p-4 md:p-8">
+        <div className="p-4 md:p-8">
             <div className="max-w-5xl mx-auto">
                 <div className="flex items-center gap-3 mb-6">
-                    <button onClick={() => router.push('/admin/dashboard')} className="p-2">
-                        <ArrowLeft size={20} />
-                    </button>
                     <h1 className="text-2xl font-bold">Manage Users</h1>
                 </div>
 

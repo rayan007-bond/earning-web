@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import {
-    ArrowLeft, Gift, Settings, TrendingUp, DollarSign,
-    CheckCircle, XCircle, AlertTriangle, Clock, Edit2,
-    Save, X, Plus, BarChart2, Loader2
+    Gift, Settings, BarChart2, DollarSign,
+    CheckCircle, XCircle, Loader2, Copy, Save, Eye,
+    EyeOff, ExternalLink, Shield, Plus, Edit2, AlertTriangle, TrendingUp, Clock
 } from 'lucide-react';
 
 interface OfferwallNetwork {
@@ -174,13 +174,10 @@ export default function AdminOfferwallsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--bg-primary)] pb-8">
+        <div className="pb-8">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-[var(--bg-primary)] border-b border-[var(--card-border)] px-4 py-3">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => router.push('/admin/dashboard')} className="p-2 hover:bg-[var(--card-border)] rounded-lg">
-                        <ArrowLeft size={20} />
-                    </button>
                     <Gift className="text-purple-500" size={24} />
                     <h1 className="text-lg font-bold">Offerwall Management</h1>
                 </div>

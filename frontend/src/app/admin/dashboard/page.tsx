@@ -18,15 +18,6 @@ interface DashboardStats {
     pendingWithdrawals: any[];
 }
 
-const navItems = [
-    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/admin/tasks', icon: ListTodo, label: 'Tasks' },
-    { href: '/admin/offerwalls', icon: Gift, label: 'Offerwalls' },
-    { href: '/admin/users', icon: UserCog, label: 'Users' },
-    { href: '/admin/withdrawals', icon: CreditCard, label: 'Withdrawals' },
-    { href: '/admin/vip-requests', icon: Crown, label: 'VIP Requests' },
-    { href: '/admin/settings', icon: Settings, label: 'Settings' },
-];
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -121,51 +112,8 @@ export default function AdminDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--background)]">
-            {/* Sidebar */}
-            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[var(--card-bg)] border-r border-[var(--card-border)] p-4 hidden md:block">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                        <span className="text-xl">💰</span>
-                    </div>
-                    <div>
-                        <h1 className="font-bold">GPT Earn</h1>
-                        <p className="text-xs text-[var(--muted)]">Admin Panel</p>
-                    </div>
-                </div>
-
-                <nav className="space-y-1">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = item.href === '/admin/dashboard';
-                        return (
-                            <button
-                                key={item.href}
-                                onClick={() => router.push(item.href)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
-                                    ? 'bg-[var(--primary)]/10 text-[var(--primary)]'
-                                    : 'text-[var(--muted)] hover:bg-[var(--card-border)]'
-                                    }`}
-                            >
-                                <Icon size={20} />
-                                <span className="font-medium">{item.label}</span>
-                            </button>
-                        );
-                    })}
-                </nav>
-
-                <button
-                    onClick={handleLogout}
-                    className="absolute bottom-4 left-4 right-4 flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors"
-                >
-                    <LogOut size={20} />
-                    <span className="font-medium">Logout</span>
-                </button>
-            </aside>
-
-            {/* Main Content */}
-            <main className="md:ml-64 p-4 md:p-8">
-                <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
+        <div className="p-4 md:p-8">
+            <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -303,7 +251,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </div>
-            </main>
         </div>
     );
 }
