@@ -4,6 +4,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { checkDailyLimit, checkSuspiciousActivity } = require('../middleware/security');
 const { calculateEarningsWithVIP } = require('../services/vipService');
 const { getTimeRemaining } = require('../utils/helpers');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
@@ -117,6 +118,26 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Start a task
+router.post('/:id/start', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        // Generate a token containing the task ID, user ID, and current timestamp
+        const token = jwt.sign(
+            { taskId: id, userId, startedAt: Date.now() },
+            process.env.JWT_SECRET || 'fallback_secret',
+            { expiresIn: '1h' } // Token expires in 1 hour
+        );
+
+        res.json({ token });
+    } catch (error) {
+        console.error('Start task error:', error);
+        res.status(500).json({ error: 'Failed to start task' });
+    }
+});
+
 // Complete a task
 router.post('/:id/complete', authMiddleware, checkDailyLimit, checkSuspiciousActivity, async (req, res) => {
     const connection = await pool.getConnection();
@@ -126,6 +147,7 @@ router.post('/:id/complete', authMiddleware, checkDailyLimit, checkSuspiciousAct
 
         const { id } = req.params;
         const userId = req.user.id;
+        const { token } = req.body; // Token added for verification
 
         // Get task
         const [tasks] = await connection.query(
@@ -139,6 +161,34 @@ router.post('/:id/complete', authMiddleware, checkDailyLimit, checkSuspiciousAct
         }
 
         const task = tasks[0];
+
+        // Verify time delay token if task does not require an answer
+        if (!task.correct_answer) {
+            if (!token) {
+                await connection.rollback();
+                return res.status(400).json({ error: 'Missing task verification token. Please start the task properly by clicking the link.' });
+            }
+
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+                
+                if (decoded.taskId !== id || decoded.userId !== userId) {
+                    throw new Error('Invalid token data');
+                }
+
+                // Minimum 10 seconds wait time
+                const elapsedSeconds = (Date.now() - decoded.startedAt) / 1000;
+                if (elapsedSeconds < 10) {
+                    await connection.rollback();
+                    return res.status(400).json({ 
+                        error: `You completed this too fast. Please wait at least 10 seconds. (${Math.ceil(10 - elapsedSeconds)}s remaining)` 
+                    });
+                }
+            } catch (err) {
+                await connection.rollback();
+                return res.status(400).json({ error: 'Invalid or expired task verification token.' });
+            }
+        }
 
         // Verify answer if required
         if (task.correct_answer) {

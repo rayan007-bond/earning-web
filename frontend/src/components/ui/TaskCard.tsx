@@ -20,7 +20,8 @@ interface TaskCardProps {
         minutes: number;
         seconds: number;
     };
-    onComplete: (id: number) => void;
+    onStart: (id: number) => Promise<string>;
+    onComplete: (id: number, answer?: string, token?: string) => Promise<void>;
     isVIP?: boolean;
     vipBonus?: number;
     requiresAnswer?: boolean;
@@ -48,6 +49,7 @@ export default function TaskCard({
     maxReached,
     unlockAt,
     timeRemaining: initialTimeRemaining,
+    onStart,
     onComplete,
     isVIP,
     vipBonus = 20,
@@ -57,6 +59,8 @@ export default function TaskCard({
     const [timeRemaining, setTimeRemaining] = useState(initialTimeRemaining);
     const [isCompleting, setIsCompleting] = useState(false);
     const [isPendingAnswer, setIsPendingAnswer] = useState(false);
+    const [verificationToken, setVerificationToken] = useState<string | null>(null);
+    const [waitTime, setWaitTime] = useState<number>(0);
 
     useEffect(() => {
         if (!isLocked || !unlockAt) return;
@@ -89,18 +93,54 @@ export default function TaskCard({
     const handleComplete = async () => {
         if (isDisabled) return;
 
-        // If task requires answer and link hasn't been opened yet
-        if (requiresAnswer && !isPendingAnswer && taskLink) {
-            window.open(taskLink, '_blank');
-            setIsPendingAnswer(true);
-            return;
-        }
-
-        setIsCompleting(true);
-        try {
-            await onComplete(id);
-        } finally {
-            setIsCompleting(false);
+        if (requiresAnswer) {
+            if (!isPendingAnswer && taskLink) {
+                window.open(taskLink, '_blank');
+                setIsPendingAnswer(true);
+                return;
+            }
+            setIsCompleting(true);
+            try {
+                await onComplete(id);
+            } catch (e) {
+                // Keep pending state if failed
+            } finally {
+                setIsCompleting(false);
+            }
+        } else {
+            if (!verificationToken) {
+                setIsCompleting(true);
+                try {
+                    const token = await onStart(id);
+                    setVerificationToken(token);
+                    setWaitTime(10);
+                    if (taskLink) window.open(taskLink, '_blank');
+                    
+                    const timerId = setInterval(() => {
+                        setWaitTime(prev => {
+                            if (prev <= 1) {
+                                clearInterval(timerId);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                } catch (e) {
+                    // Start failed
+                } finally {
+                    setIsCompleting(false);
+                }
+            } else if (waitTime === 0) {
+                setIsCompleting(true);
+                try {
+                    await onComplete(id, undefined, verificationToken);
+                    setVerificationToken(null);
+                } catch (e) {
+                    // Complete failed
+                } finally {
+                    setIsCompleting(false);
+                }
+            }
         }
     };
 
@@ -162,13 +202,13 @@ export default function TaskCard({
                     ) : (
                         <button
                             onClick={handleComplete}
-                            disabled={isDisabled}
+                            disabled={isDisabled || waitTime > 0}
                             className={`btn btn-primary mt-2 py-2 px-4 text-xs ${isCompleting ? 'opacity-50' : ''}`}
                         >
                             {isCompleting ? 'Loading...' : (
                                 requiresAnswer
                                     ? (isPendingAnswer ? 'Submit Answer' : 'Complete')
-                                    : 'Complete'
+                                    : (verificationToken ? (waitTime > 0 ? `Wait ${waitTime}s...` : 'Claim Reward') : 'Complete')
                             )}
                         </button>
                     )}

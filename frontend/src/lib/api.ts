@@ -115,11 +115,18 @@ class ApiClient {
         return this.request<any>(`/tasks/${id}`, { token });
     }
 
-    async completeTask(token: string, id: string, answer?: string) {
+    async startTask(token: string, id: string) {
+        return this.request<{ token: string }>(`/tasks/${id}/start`, {
+            method: 'POST',
+            token,
+        });
+    }
+
+    async completeTask(token: string, id: string, answer?: string, verificationToken?: string) {
         return this.request<{ reward: number; bonus: number; isVIP: boolean }>(`/tasks/${id}/complete`, {
             method: 'POST',
             token,
-            body: JSON.stringify({ answer }),
+            body: JSON.stringify({ answer, token: verificationToken }),
         });
     }
 

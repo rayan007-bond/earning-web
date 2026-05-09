@@ -122,10 +122,10 @@ router.get('/:network', async (req, res) => {
         const offerName = req.query[paramConfig.offerNameParam] || '';
         const signature = req.query[paramConfig.signatureParam];
 
-        // 3. Basic validation
-        if (!userId || !transactionId || amount <= 0) {
-            await logTransaction(networkConfig.id, networkLower, null, transactionId, 0, 0, 0, ipAddress, userAgent, req.query, 'rejected', 'Missing required parameters');
-            console.log(`[POSTBACK] Missing required parameters`);
+        // 3. Basic validation (Allow negative amounts for chargebacks)
+        if (!userId || !transactionId || isNaN(amount) || amount === 0) {
+            await logTransaction(networkConfig.id, networkLower, null, transactionId, 0, 0, 0, ipAddress, userAgent, req.query, 'rejected', 'Missing required parameters or zero amount');
+            console.log(`[POSTBACK] Missing required parameters or zero amount`);
             return res.status(400).send('0');
         }
 
@@ -177,6 +177,9 @@ router.get('/:network', async (req, res) => {
         const payoutPercent = parseFloat(networkConfig.payout_percent) / 100;
         const creditedAmount = parseFloat((amount * payoutPercent).toFixed(4));
         const adminProfit = parseFloat((amount - creditedAmount).toFixed(4));
+        
+        const isChargeback = amount < 0;
+        const txStatus = isChargeback ? 'chargeback' : 'credited';
 
         // 9. Start transaction
         const connection = await pool.getConnection();
@@ -190,12 +193,12 @@ router.get('/:network', async (req, res) => {
                 [creditedAmount, creditedAmount, userId]
             );
 
-            // Log successful transaction
+            // Log successful transaction or chargeback
             await connection.query(
                 `INSERT INTO offerwall_transactions 
                 (user_id, network_id, network_name, transaction_id, offer_id, offer_name, payout, credited_amount, admin_profit, ip_address, user_agent, raw_data, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'credited')`,
-                [userId, networkConfig.id, networkLower, transactionId, offerId, offerName, amount, creditedAmount, adminProfit, ipAddress, userAgent, JSON.stringify(req.query)]
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [userId, networkConfig.id, networkLower, transactionId, offerId, offerName, amount, creditedAmount, adminProfit, ipAddress, userAgent, JSON.stringify(req.query), txStatus]
             );
 
             // Update network stats
@@ -221,15 +224,24 @@ router.get('/:network', async (req, res) => {
             }
 
             // Create notification for user
-            await connection.query(
-                `INSERT INTO notifications (user_id, title, message, type)
-                 VALUES (?, 'Offer Completed!', ?, 'success')`,
-                [userId, `You earned $${creditedAmount.toFixed(2)} from ${networkConfig.display_name}${offerName ? `: ${offerName}` : ''}`]
-            );
+            if (isChargeback) {
+                await connection.query(
+                    `INSERT INTO notifications (user_id, title, message, type)
+                     VALUES (?, 'Offerwall Chargeback', ?, 'error')`,
+                    [userId, `A chargeback of $${Math.abs(creditedAmount).toFixed(2)} was applied from ${networkConfig.display_name}${offerName ? `: ${offerName}` : ''}.`]
+                );
+                console.log(`[POSTBACK] ⚠️ Chargeback! User ${userId} deducted $${Math.abs(creditedAmount)} from ${networkLower}`);
+            } else {
+                await connection.query(
+                    `INSERT INTO notifications (user_id, title, message, type)
+                     VALUES (?, 'Offer Completed!', ?, 'success')`,
+                    [userId, `You earned $${creditedAmount.toFixed(2)} from ${networkConfig.display_name}${offerName ? `: ${offerName}` : ''}`]
+                );
+                console.log(`[POSTBACK] ✅ Success! User ${userId} credited $${creditedAmount} from ${networkLower}`);
+            }
 
             await connection.commit();
 
-            console.log(`[POSTBACK] ✅ Success! User ${userId} credited $${creditedAmount} from ${networkLower}`);
             return res.status(200).send('1'); // Success response
 
         } catch (error) {

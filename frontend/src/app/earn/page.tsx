@@ -140,18 +140,18 @@ export default function EarnPage() {
         }
     };
 
-    const handleCompleteTask = async (taskId: number) => {
+    const handleStartTask = async (taskId: number) => {
+        const { token: vToken } = await api.startTask(token!, taskId.toString());
+        return vToken;
+    };
+
+    const handleCompleteTask = async (taskId: number, answer?: string, verificationToken?: string) => {
         try {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
 
-            // Open task link in new tab
-            if (task.taskLink && !task.taskLink.startsWith('internal://')) {
-                window.open(task.taskLink, '_blank');
-            }
-
             // Verify answer if required
-            if (task.requiresAnswer) {
+            if (task.requiresAnswer && !answer) {
                 setSubmitModal({
                     isOpen: true,
                     taskId: task.id,
@@ -161,19 +161,20 @@ export default function EarnPage() {
             }
 
             // Complete the task
-            await processTaskCompletion(taskId);
+            await processTaskCompletion(taskId, answer, verificationToken);
 
         } catch (error: any) {
             if (error.message?.includes('limit')) {
                 loadDailyLimits(); // Refresh limits on limit error
             }
             showToast(error.message || 'Failed to complete task', 'error');
+            throw error; // Rethrow so TaskCard knows
         }
     };
 
-    const processTaskCompletion = async (taskId: number, answer?: string) => {
+    const processTaskCompletion = async (taskId: number, answer?: string, verificationToken?: string) => {
         try {
-            const result = await api.completeTask(token!, taskId.toString(), answer);
+            const result = await api.completeTask(token!, taskId.toString(), answer, verificationToken);
 
             showToast(
                 `${result.isVIP ? '👑 ' : ''}You earned $${result.reward.toFixed(2)}!${result.bonus > 0 ? ` (+$${result.bonus.toFixed(2)} VIP bonus)` : ''}`,
@@ -349,6 +350,7 @@ export default function EarnPage() {
                             key={task.id}
                             {...task}
                             isLocked={task.isLocked || (dailyLimits?.isLocked ?? false)}
+                            onStart={handleStartTask}
                             onComplete={handleCompleteTask}
                             isVIP={!!user?.vip}
                             vipBonus={user?.vip?.earningBonus}
