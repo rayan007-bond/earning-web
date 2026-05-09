@@ -55,8 +55,8 @@ router.post('/register', async (req, res) => {
             isUnique = check.length === 0;
         }
 
-        // Generate verification token
-        const verificationToken = generateToken();
+        // Generate 6-digit verification OTP
+        const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
         // Check if SMTP is configured
         const smtpConfigured = process.env.SMTP_USER && process.env.SMTP_PASS;
@@ -200,16 +200,15 @@ router.post('/login', async (req, res) => {
 // Verify email
 router.post('/verify-email', async (req, res) => {
     try {
-        const { token } = req.body;
+        const { email, token } = req.body;
 
-        if (!token) {
-            return res.status(400).json({ error: 'Verification token is required' });
+        if (!email || !token) {
+            return res.status(400).json({ error: 'Email and verification code are required' });
         }
 
-        // First, try to find user by token
         const [users] = await pool.query(
-            'SELECT id, email_verified FROM users WHERE email_verification_token = ?',
-            [token]
+            'SELECT id, email_verified FROM users WHERE email = ? AND email_verification_token = ?',
+            [email, token]
         );
 
         if (users.length > 0) {
@@ -221,10 +220,7 @@ router.post('/verify-email', async (req, res) => {
             return res.json({ message: 'Email verified successfully! Welcome to GPT Earn!' });
         }
 
-        // Token not found - maybe already verified? Check by looking for any recently verified user
-        // This handles React strict mode double-calling the API
-        // Return success message since verification happened on the first call
-        return res.json({ message: 'Email verified successfully! Welcome to GPT Earn!' });
+        return res.status(400).json({ error: 'Invalid verification code. Please check your email and try again.' });
 
     } catch (error) {
         console.error('Verify email error:', error);

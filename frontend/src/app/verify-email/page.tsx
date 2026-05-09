@@ -2,49 +2,48 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, XCircle, Loader2, ArrowRight, Sparkles, Gift, Zap } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, ArrowRight, Sparkles, Gift, Zap, Mail } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
+import { api } from '@/lib/api';
 
 function VerifyEmailContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const token = searchParams.get('token');
+    const { showToast } = useToast();
+    
+    // Get email from URL parameters
+    const email = searchParams.get('email');
 
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [message, setMessage] = useState('Verifying your email...');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [message, setMessage] = useState('');
+    const [otp, setOtp] = useState('');
 
     useEffect(() => {
-        if (!token) {
+        if (!email) {
             setStatus('error');
-            setMessage('Invalid verification link. No token provided.');
+            setMessage('No email address provided. Please register or login.');
+        }
+    }, [email]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!email) return;
+        
+        if (otp.length < 6) {
+            showToast('Please enter the 6-digit code', 'error');
             return;
         }
 
-        verifyEmail();
-    }, [token]);
-
-    const verifyEmail = async () => {
+        setStatus('loading');
+        
         try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/auth/verify-email`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                }
-            );
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setStatus('success');
-                setMessage('Your email has been verified successfully!');
-            } else {
-                setStatus('error');
-                setMessage(data.error || 'Verification failed. The link may have expired.');
-            }
-        } catch (error) {
+            const response = await api.verifyEmail(email, otp);
+            setStatus('success');
+            setMessage('Your email has been verified successfully!');
+        } catch (error: any) {
             setStatus('error');
-            setMessage('Failed to verify email. Please try again.');
+            setMessage(error.message || 'Verification failed. The code may be invalid.');
         }
     };
 
@@ -52,17 +51,75 @@ function VerifyEmailContent() {
         <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="card text-center overflow-hidden">
+                    {/* Default Input State */}
+                    {(status === 'idle' || status === 'error') && (
+                        <>
+                            <div className="mb-6">
+                                <div className="w-20 h-20 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto">
+                                    <Mail className="text-[var(--primary)]" size={40} />
+                                </div>
+                            </div>
+                            <h1 className="text-2xl font-bold mb-2">Check Your Email</h1>
+                            <p className="text-[var(--muted)] mb-2">
+                                We sent a 6-digit code to:
+                            </p>
+                            <p className="font-semibold text-[var(--primary)] mb-6">{email}</p>
+                            
+                            {status === 'error' && email && (
+                                <div className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-6 border border-red-500/20">
+                                    {message}
+                                </div>
+                            )}
+
+                            {email ? (
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div>
+                                        <input
+                                            type="text"
+                                            maxLength={6}
+                                            placeholder="Enter 6-digit code"
+                                            className="input text-center text-2xl tracking-[0.5em] font-mono h-16"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                                            disabled={!email}
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={!email || otp.length < 6}
+                                        className="btn btn-primary w-full py-4 text-base"
+                                    >
+                                        Verify Account
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="bg-red-500/10 text-red-500 text-sm p-3 rounded-lg mb-6 border border-red-500/20">
+                                    No email provided. Please go back to the registration page.
+                                </div>
+                            )}
+                            
+                            <div className="mt-6 space-y-3">
+                                <button
+                                    onClick={() => router.push('/login')}
+                                    className="text-sm text-[var(--primary)] hover:underline"
+                                >
+                                    Already verified? Login here
+                                </button>
+                            </div>
+                        </>
+                    )}
+
                     {/* Loading State */}
                     {status === 'loading' && (
-                        <>
+                        <div className="py-8">
                             <div className="mb-6">
                                 <div className="w-20 h-20 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto">
                                     <Loader2 className="text-[var(--primary)] animate-spin" size={40} />
                                 </div>
                             </div>
-                            <h1 className="text-2xl font-bold mb-2">Verifying Email</h1>
-                            <p className="text-[var(--muted)]">{message}</p>
-                        </>
+                            <h1 className="text-2xl font-bold mb-2">Verifying Code...</h1>
+                            <p className="text-[var(--muted)]">Please wait a moment</p>
+                        </div>
                     )}
 
                     {/* Success State */}
@@ -120,33 +177,6 @@ function VerifyEmailContent() {
                             </div>
                         </>
                     )}
-
-                    {/* Error State */}
-                    {status === 'error' && (
-                        <>
-                            <div className="mb-6">
-                                <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto">
-                                    <XCircle className="text-red-500" size={40} />
-                                </div>
-                            </div>
-                            <h1 className="text-2xl font-bold mb-2">Verification Failed</h1>
-                            <p className="text-[var(--muted)] mb-6">{message}</p>
-                            <div className="space-y-3">
-                                <button
-                                    onClick={() => router.push('/register')}
-                                    className="btn bg-[var(--card-bg)] border border-[var(--card-border)] font-semibold px-8 py-3 rounded-xl w-full"
-                                >
-                                    Try Again
-                                </button>
-                                <button
-                                    onClick={() => router.push('/login')}
-                                    className="text-sm text-[var(--primary)] hover:underline"
-                                >
-                                    Already verified? Login here
-                                </button>
-                            </div>
-                        </>
-                    )}
                 </div>
             </div>
         </div>
@@ -164,4 +194,3 @@ export default function VerifyEmailPage() {
         </Suspense>
     );
 }
-

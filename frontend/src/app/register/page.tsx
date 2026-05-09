@@ -48,10 +48,9 @@ function RegisterContent() {
             const result = await register(email, username, password, referralCode || undefined);
 
             if (result.requiresVerification) {
-                // Email verification required - show message
-                setRegisteredEmail(email);
-                setShowVerificationMessage(true);
-                showToast('Please check your email to verify your account!', 'success');
+                // Email verification required - redirect to OTP page
+                showToast('Registration successful! Please check your email for the verification code.', 'success');
+                router.push(`/verify-email?email=${encodeURIComponent(email)}`);
             } else {
                 // Auto-logged in (no SMTP configured)
                 showToast('Account created! Welcome!', 'success');
@@ -64,37 +63,7 @@ function RegisterContent() {
         }
     };
 
-    // Show email verification message
-    if (showVerificationMessage) {
-        return (
-            <div className="mobile-container min-h-screen flex items-center justify-center p-4">
-                <div className="card text-center max-w-md">
-                    <div className="w-20 h-20 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mx-auto mb-6">
-                        <Mail className="text-[var(--primary)]" size={40} />
-                    </div>
-                    <h1 className="text-2xl font-bold mb-2">Check Your Email!</h1>
-                    <p className="text-[var(--muted)] mb-4">
-                        We've sent a verification link to:
-                    </p>
-                    <p className="font-semibold text-[var(--primary)] mb-6">{registeredEmail}</p>
-                    <p className="text-sm text-[var(--muted)] mb-6">
-                        Click the link in the email to verify your account and start earning!
-                    </p>
-                    <div className="space-y-3">
-                        <button
-                            onClick={() => router.push('/login')}
-                            className="btn gradient-primary text-white font-semibold px-8 py-3 rounded-xl w-full"
-                        >
-                            Go to Login
-                        </button>
-                        <p className="text-xs text-[var(--muted)]">
-                            Didn't receive email? Check your spam folder
-                        </p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    // (Removed Email Verification Message UI as we redirect to verify-email page)
 
     return (
         <div className="mobile-container min-h-screen flex flex-col">

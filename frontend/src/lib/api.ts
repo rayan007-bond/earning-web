@@ -67,10 +67,10 @@ class ApiClient {
         });
     }
 
-    async verifyEmail(token: string) {
+    async verifyEmail(email: string, token: string) {
         return this.request('/auth/verify-email', {
             method: 'POST',
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ email, token }),
         });
     }
 

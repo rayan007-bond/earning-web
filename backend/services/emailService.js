@@ -32,20 +32,23 @@ const sendEmail = async (to, subject, html) => {
 };
 
 const sendVerificationEmail = async (email, token) => {
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
                 <h1 style="color: white; margin: 0;">GPT Earn</h1>
             </div>
             <div style="padding: 30px; background: #f9fafb;">
-                <h2 style="color: #1f2937;">Verify Your Email</h2>
-                <p style="color: #6b7280;">Thank you for registering! Please click the button below to verify your email address.</p>
+                <h2 style="color: #1f2937; text-align: center;">Verify Your Email</h2>
+                <p style="color: #6b7280; text-align: center;">Thank you for registering! Please use the 6-digit verification code below to activate your account.</p>
+                
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="${verifyUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">Verify Email</a>
+                    <div style="background: #ffffff; border: 2px dashed #764ba2; padding: 20px; display: inline-block; border-radius: 10px;">
+                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1f2937;">${token}</span>
+                    </div>
                 </div>
-                <p style="color: #9ca3af; font-size: 12px;">If you didn't create an account, you can safely ignore this email.</p>
+                
+                <p style="color: #6b7280; text-align: center;">Return to the website and enter this code to complete your registration.</p>
+                <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px;">If you didn't create an account, you can safely ignore this email.</p>
             </div>
         </div>
     `;
