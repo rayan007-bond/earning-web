@@ -153,7 +153,7 @@ router.post('/login', async (req, res) => {
         // Check email verification
         if (!user.email_verified) {
             return res.status(403).json({
-                error: 'Please verify your email before logging in. Check your inbox for the verification link.',
+                error: 'Please verify your email before logging in.',
                 requiresVerification: true
             });
         }

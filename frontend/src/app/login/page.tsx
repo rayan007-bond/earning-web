@@ -35,6 +35,11 @@ function LoginContent() {
             const redirect = searchParams.get('redirect') || '/';
             router.push(redirect);
         } catch (error: any) {
+            if (error.message?.includes('verify your email')) {
+                showToast('Please enter your verification code', 'info');
+                router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+                return;
+            }
             showToast(error.message || 'Login failed', 'error');
         } finally {
             setIsLoading(false);
