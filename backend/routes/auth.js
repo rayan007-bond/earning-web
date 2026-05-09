@@ -217,7 +217,29 @@ router.post('/verify-email', async (req, res) => {
                 'UPDATE users SET email_verified = TRUE, status = "active", email_verification_token = NULL WHERE id = ?',
                 [users[0].id]
             );
-            return res.json({ message: 'Email verified successfully! Welcome to GPT Earn!' });
+
+            // Fetch full user details for auto-login
+            const [userDetails] = await pool.query('SELECT * FROM users WHERE id = ?', [users[0].id]);
+            const user = userDetails[0];
+
+            // Generate token
+            const jwtToken = jwt.sign(
+                { userId: user.id },
+                process.env.JWT_SECRET,
+                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+            );
+
+            return res.json({ 
+                message: 'Email verified successfully! Welcome to GPT Earn!',
+                token: jwtToken,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    balance: parseFloat(user.balance),
+                    emailVerified: true
+                }
+            });
         }
 
         return res.status(400).json({ error: 'Invalid verification code. Please check your email and try again.' });

@@ -39,6 +39,9 @@ function VerifyEmailContent() {
         
         try {
             const response = await api.verifyEmail(email, otp);
+            if (response.token) {
+                localStorage.setItem('token', response.token);
+            }
             setStatus('success');
             setMessage('Your email has been verified successfully!');
         } catch (error: any) {
@@ -168,7 +171,7 @@ function VerifyEmailContent() {
                                 </div>
 
                                 <button
-                                    onClick={() => router.push('/login')}
+                                    onClick={() => window.location.href = '/'}
                                     className="btn gradient-primary text-white font-semibold px-8 py-4 rounded-xl w-full flex items-center justify-center gap-2 text-lg hover:scale-105 transition-transform"
                                 >
                                     Start Earning Now
