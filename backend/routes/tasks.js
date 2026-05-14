@@ -54,7 +54,6 @@ router.get('/', authMiddleware, async (req, res) => {
                 isLocked,
                 maxReached,
                 unlockAt: task.unlock_at,
-                unlockAt: task.unlock_at,
                 timeRemaining: isLocked ? getTimeRemaining(task.unlock_at) : null,
                 requiresAnswer: !!task.correct_answer
             };
@@ -107,7 +106,6 @@ router.get('/:id', authMiddleware, async (req, res) => {
             isLocked,
             maxReached,
             unlockAt: task.unlock_at,
-            unlockAt: task.unlock_at,
             timeRemaining: isLocked ? getTimeRemaining(task.unlock_at) : null,
             requiresAnswer: !!task.correct_answer
         });
@@ -127,7 +125,7 @@ router.post('/:id/start', authMiddleware, async (req, res) => {
         // Generate a token containing the task ID, user ID, and current timestamp
         const token = jwt.sign(
             { taskId: id, userId, startedAt: Date.now() },
-            process.env.JWT_SECRET || 'fallback_secret',
+            process.env.JWT_SECRET,
             { expiresIn: '1h' } // Token expires in 1 hour
         );
 
@@ -170,7 +168,7 @@ router.post('/:id/complete', authMiddleware, checkDailyLimit, checkSuspiciousAct
             }
 
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 
                 if (decoded.taskId !== id || decoded.userId !== userId) {
                     throw new Error('Invalid token data');

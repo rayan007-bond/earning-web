@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
 
     return (
         <div className="p-4 md:p-8">
-            <div className="max-w-5xl mx-auto">
+            <div className="w-full">
                 <div className="flex items-center gap-3 mb-6">
                     <h1 className="text-2xl font-bold">Manage Users</h1>
                 </div>
@@ -173,8 +173,8 @@ export default function AdminUsersPage() {
                     <input
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        placeholder="Search by username or email..."
-                        className="input pl-11"
+                        placeholder="Search by username, email, or device ID..."
+                        className="input !pl-11"
                     />
                 </div>
 

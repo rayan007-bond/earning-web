@@ -1,4 +1,4 @@
--- GPT Earning Platform Database Schema
+-- PrimeLooting Platform Database Schema
 -- MySQL Database
 
 -- Users table
@@ -259,7 +259,7 @@ INSERT INTO site_settings (setting_key, setting_value, setting_type) VALUES
 ('min_withdrawal_standard', '10.00', 'number'),
 ('min_withdrawal_vip', '5.00', 'number'),
 ('withdrawal_fee_vip', '2.00', 'number'),
-('site_name', 'GPT Earn', 'string'),
+('site_name', 'PrimeLoot', 'string'),
 ('site_description', 'Earn money by completing simple tasks', 'string');
 
 -- Insert default VIP plans

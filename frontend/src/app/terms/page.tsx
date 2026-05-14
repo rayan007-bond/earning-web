@@ -44,7 +44,7 @@ export default function TermsPrivacyPage() {
                         </div>
                         <div className="text-xs text-white/50 space-y-3 leading-relaxed">
                             <p>
-                                By accessing or using GPT Earn, you agree to be bound by these terms. You must be at least 13 years old to use our services.
+                                By accessing or using PrimeLoot, you agree to be bound by these terms. You must be at least 13 years old to use our services.
                             </p>
                             <p>
                                 <strong>1. Account Rules:</strong> You may only create one account per person. Using VPNs, proxies, or automation tools will result in an immediate ban and forfeiture of all earnings.

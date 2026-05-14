@@ -156,4 +156,43 @@ const checkSuspiciousActivity = async (req, res, next) => {
     }
 };
 
-module.exports = { checkDailyLimit, checkSuspiciousActivity, getSettings };
+// Check for VPN/Proxy usage using proxycheck.io
+const checkVPN = async (req, res, next) => {
+    try {
+        const userIP = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+        
+        // Skip for localhost/development
+        if (userIP === '::1' || userIP === '127.0.0.1' || userIP === 'localhost') {
+            return next();
+        }
+
+        const apiKey = process.env.PROXYCHECK_API_KEY || '';
+        const apiUrl = `http://proxycheck.io/v2/${userIP}?key=${apiKey}&vpn=1&asn=1`;
+        
+        // Use fetch (requires Node 18+) or dynamic import node-fetch if older. 
+        // Assuming modern Node.js environment here.
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (data.status === 'ok' && data[userIP]) {
+            if (data[userIP].proxy === 'yes') {
+                // Log the suspicious activity
+                if (req.user && req.user.id) {
+                     await pool.query(
+                        `INSERT INTO login_logs (user_id, ip_address, user_agent, is_suspicious) VALUES (?, ?, ?, TRUE)`,
+                        [req.user.id, userIP, req.headers['user-agent']]
+                    );
+                }
+                return res.status(403).json({ error: 'VPN or Proxy detected. Please disable it to continue.' });
+            }
+        }
+
+        next();
+    } catch (error) {
+        console.error('VPN check error:', error);
+        // Fail open to not block users if the API goes down
+        next();
+    }
+};
+
+module.exports = { checkDailyLimit, checkSuspiciousActivity, getSettings, checkVPN };

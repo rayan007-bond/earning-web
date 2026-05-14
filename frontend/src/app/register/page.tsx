@@ -45,7 +45,14 @@ function RegisterContent() {
         setIsLoading(true);
 
         try {
-            const result = await register(email, username, password, referralCode || undefined);
+            // Generate or retrieve Device ID
+            let deviceId = localStorage.getItem('device_id');
+            if (!deviceId) {
+                deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('device_id', deviceId);
+            }
+
+            const result = await register(email, username, password, referralCode || undefined, deviceId);
 
             if (result.requiresVerification) {
                 // Email verification required - redirect to OTP page
@@ -68,14 +75,15 @@ function RegisterContent() {
     return (
         <div className="mobile-container min-h-screen flex flex-col">
             {/* Header */}
-            <div className="gradient-primary p-8 pb-16 text-center">
-                <div className="text-4xl mb-2">🚀</div>
-                <h1 className="text-2xl font-bold text-white">Join GPT Earn</h1>
-                <p className="text-white/70 text-sm mt-1">Start earning money today</p>
+            <div className="gradient-primary pt-6 pb-12 text-center flex flex-col items-center">
+                <div className="w-56 h-32 transform hover:scale-105 transition-transform duration-300">
+                    <img src="/logo.png" alt="PrimeLoot Logo" className="w-full h-full object-contain filter drop-shadow-2xl" />
+                </div>
+                <p className="text-white/80 text-sm mt-2 font-medium">Start earning money today</p>
             </div>
 
             {/* Form Card */}
-            <div className="flex-1 -mt-8 bg-[var(--background)] rounded-t-3xl p-6">
+            <div className="flex-1 -mt-6 bg-[var(--background)] rounded-t-[2.5rem] p-6 shadow-2xl relative z-10">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">Username</label>
@@ -189,7 +197,7 @@ function RegisterContent() {
                 </div>
 
                 <p className="mt-4 text-xs text-center text-[var(--muted)]">
-                    By signing up, you agree to our Terms of Service and Privacy Policy
+                    By signing up, you agree to our <Link href="/terms" className="text-[var(--primary)] hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-[var(--primary)] hover:underline">Privacy Policy</Link>
                 </p>
             </div>
         </div>

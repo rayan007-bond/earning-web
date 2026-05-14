@@ -108,7 +108,7 @@ export default function AdminLoginPage() {
                 </form>
 
                 <p className="text-center text-sm text-[var(--muted)] mt-6">
-                    Default: admin@gpt-earn.com / admin123
+                    PrimeLoot Admin Panel
                 </p>
             </div>
         </div>

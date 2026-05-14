@@ -182,7 +182,7 @@ export default function ProfilePage() {
 
                 {/* Version info */}
                 <p className="text-center text-xs text-[var(--muted)] pt-4">
-                    GPT Earn v1.0.0
+                    PrimeLoot v1.0.0
                 </p>
             </main>
 

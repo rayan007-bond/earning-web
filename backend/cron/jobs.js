@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const { pool } = require('../config/database');
+const { sendDailyTasksEmail } = require('../services/emailService');
 
 const jobs = {
     start: () => {
@@ -107,6 +108,39 @@ const jobs = {
                 }
             } catch (error) {
                 console.error('❌ Failed to complete withdrawals:', error);
+            }
+        });
+
+        // Send daily task reminder emails (Every day at 8:00 AM)
+        cron.schedule('0 8 * * *', async () => {
+            try {
+                console.log('📧 Sending daily task emails...');
+                
+                // Get users with active status and their email
+                const [users] = await pool.query(
+                    `SELECT id, username, email FROM users WHERE status = 'active'`
+                );
+
+                if (users.length > 0) {
+                    // Count available tasks for each user
+                    for (const user of users) {
+                        const [tasks] = await pool.query(
+                            `SELECT COUNT(*) as count FROM tasks 
+                             WHERE status = 'active' 
+                             AND id NOT IN (SELECT task_id FROM task_completions WHERE user_id = ?)`
+                        , [user.id]);
+
+                        const taskCount = tasks[0].count;
+
+                        if (taskCount > 0) {
+                            // Send email
+                            await sendDailyTasksEmail(user.email, user.username, taskCount);
+                        }
+                    }
+                    console.log(`✅ Daily emails sent to eligible users`);
+                }
+            } catch (error) {
+                console.error('❌ Failed to send daily emails:', error);
             }
         });
 

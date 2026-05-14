@@ -174,12 +174,11 @@ function LandingPage() {
         <div className="flex items-center justify-between px-4 py-3 max-w-6xl mx-auto">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--primary)] to-purple-600 flex items-center justify-center shadow-lg shadow-[var(--primary)]/30">
-              <Zap className="text-white" size={18} />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-white/5 p-1">
+              <img src="/logo.png" alt="PrimeLoot Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="font-bold text-xl">
-              <span className="bg-gradient-to-r from-[var(--primary)] to-purple-500 bg-clip-text text-transparent">GPT</span>
-              <span className="text-white">Earn</span>
+            <span className="font-bold text-xl tracking-tight text-white">
+              PrimeLoot
             </span>
           </div>
 
@@ -417,7 +416,7 @@ function LandingPage() {
             Ready to Start Earning?
           </h3>
           <p className="text-white/50 text-lg mb-8">
-            Join 500,000+ users already earning with GPT Earn
+            Join 500,000+ users already earning with PrimeLoot
           </p>
           <button
             onClick={() => router.push('/register')}
@@ -463,7 +462,7 @@ function LandingPage() {
           {/* Socials & Copyright */}
           <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-6">
             <p className="text-[10px] sm:text-xs text-white/30 font-black tracking-[0.2em] uppercase">
-              © {new Date().getFullYear()} GPT EARN.
+              © {new Date().getFullYear()} PrimeLoot.
             </p>
             <div className="flex items-center gap-5 text-white/30">
               <a href="#" className="hover:text-[var(--primary)] hover:scale-110 transition-all"><Globe size={18} /></a>

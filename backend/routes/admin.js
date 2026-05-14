@@ -126,6 +126,29 @@ router.get('/dashboard', adminAuth, async (req, res) => {
     }
 });
 
+// Broadcast Announcement
+router.post('/broadcast', adminAuth, superAdminOnly, async (req, res) => {
+    try {
+        const { title, message } = req.body;
+        
+        if (!title || !message) {
+            return res.status(400).json({ error: 'Title and message are required' });
+        }
+
+        // Send to all active users
+        await pool.query(
+            `INSERT INTO notifications (user_id, title, message, type, created_at)
+             SELECT id, ?, ?, 'info', NOW() FROM users WHERE status = 'active'`,
+            [title, message]
+        );
+
+        res.json({ success: true, message: 'Broadcast sent successfully' });
+    } catch (error) {
+        console.error('Broadcast error:', error);
+        res.status(500).json({ error: 'Failed to send broadcast' });
+    }
+});
+
 // ============ TASK MANAGEMENT ============
 
 // Get all tasks
@@ -226,8 +249,8 @@ router.get('/users', adminAuth, async (req, res) => {
         const params = [];
 
         if (search) {
-            query += ' AND (email LIKE ? OR username LIKE ?)';
-            params.push(`%${search}%`, `%${search}%`);
+            query += ' AND (email LIKE ? OR username LIKE ? OR device_id LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
         }
 
         if (status) {
@@ -703,6 +726,12 @@ router.get('/settings', adminAuth, async (req, res) => {
             minWithdrawal: 5,
             referralCommission: 10,
             vipUnlimited: true,
+            withdrawalMethods: [
+                { id: 'jazzcash', name: 'JazzCash', minAmount: 1, feePercent: 0 },
+                { id: 'easypaisa', name: 'Easypaisa', minAmount: 1, feePercent: 0 },
+                { id: 'usdt_trc20', name: 'USDT (TRC20)', minAmount: 5, feePercent: 2 },
+                { id: 'binance_pay', name: 'Binance Pay', minAmount: 2, feePercent: 0 }
+            ]
         };
 
         settings.forEach(s => {
@@ -712,6 +741,7 @@ router.get('/settings', adminAuth, async (req, res) => {
             if (s.setting_key === 'min_withdrawal_standard') settingsObj.minWithdrawal = parseFloat(s.setting_value);
             if (s.setting_key === 'referral_commission_rate') settingsObj.referralCommission = parseFloat(s.setting_value);
             if (s.setting_key === 'vip_unlimited') settingsObj.vipUnlimited = s.setting_value === 'true';
+            if (s.setting_key === 'withdrawal_methods') settingsObj.withdrawalMethods = JSON.parse(s.setting_value);
         });
 
         res.json(settingsObj);
@@ -724,7 +754,7 @@ router.get('/settings', adminAuth, async (req, res) => {
 // Update site settings
 router.put('/settings', adminAuth, async (req, res) => {
     try {
-        const { dailyTaskLimit, dailyOfferLimit, cooldownHours, minWithdrawal, referralCommission, vipUnlimited } = req.body;
+        const { dailyTaskLimit, dailyOfferLimit, cooldownHours, minWithdrawal, referralCommission, vipUnlimited, withdrawalMethods } = req.body;
 
         const settingsToUpdate = [
             ['daily_task_limit', (dailyTaskLimit ?? 6).toString()],
@@ -734,6 +764,10 @@ router.put('/settings', adminAuth, async (req, res) => {
             ['referral_commission_rate', (referralCommission ?? 10).toString()],
             ['vip_unlimited', String(vipUnlimited ?? true)],
         ];
+
+        if (withdrawalMethods) {
+            settingsToUpdate.push(['withdrawal_methods', JSON.stringify(withdrawalMethods)]);
+        }
 
         for (const [key, value] of settingsToUpdate) {
             await pool.query(
@@ -753,6 +787,29 @@ router.put('/settings', adminAuth, async (req, res) => {
     } catch (error) {
         console.error('Update settings error:', error);
         res.status(500).json({ error: 'Failed to update settings' });
+    }
+});
+
+// Change admin password
+router.post('/change-password', adminAuth, async (req, res) => {
+    try {
+        const { newPassword } = req.body;
+        
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        await pool.query(
+            'UPDATE admin_users SET password_hash = ? WHERE id = ?',
+            [hashedPassword, req.admin.id]
+        );
+
+        res.json({ success: true, message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ error: 'Failed to change password' });
     }
 });
 

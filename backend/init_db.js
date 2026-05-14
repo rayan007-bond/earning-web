@@ -1,4 +1,4 @@
-const { query } = require('./config/database');
+const { pool } = require('./config/database');
 
 const createMissingTable = async () => {
     try {
@@ -18,7 +18,7 @@ const createMissingTable = async () => {
             )
         `;
         
-        await query(sql);
+        await pool.query(sql);
         console.log('✅ Table user_daily_limits is ready.');
     } catch (error) {
         console.error('❌ Error creating user_daily_limits table:', error);

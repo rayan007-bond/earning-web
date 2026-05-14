@@ -4,13 +4,14 @@ const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { generateReferralCode, generateToken, isValidEmail, getClientIP } = require('../utils/helpers');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
+const { checkVPN } = require('../middleware/security');
 
 const router = express.Router();
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', checkVPN, async (req, res) => {
     try {
-        const { email, username, password, referralCode } = req.body;
+        const { email, username, password, referralCode, deviceId } = req.body;
 
         // Validation
         if (!email || !username || !password) {
@@ -25,10 +26,18 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Password must be at least 6 characters' });
         }
 
-        // Check existing user
+        // Check existing user by email
         const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
         if (existing.length > 0) {
             return res.status(400).json({ error: 'Email already registered' });
+        }
+
+        // Check one device per account
+        if (deviceId) {
+            const [existingDevice] = await pool.query('SELECT id FROM users WHERE device_id = ?', [deviceId]);
+            if (existingDevice.length > 0) {
+                return res.status(400).json({ error: 'This device is already associated with an account. Only one account per device is allowed.' });
+            }
         }
 
         // Handle referral
@@ -58,13 +67,16 @@ router.post('/register', async (req, res) => {
         // Generate 6-digit verification OTP
         const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
+        // Dynamically reload .env so user doesn't have to restart server locally
+        require('dotenv').config({ override: true });
+
         // Check if SMTP is configured
         const smtpConfigured = process.env.SMTP_USER && process.env.SMTP_PASS;
 
         // Create user - if SMTP not configured, auto-verify for testing
         const [result] = await pool.query(
-            `INSERT INTO users (email, username, password_hash, referral_code, referred_by, status, email_verified, email_verification_token, last_ip)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO users (email, username, password_hash, referral_code, referred_by, status, email_verified, email_verification_token, last_ip, device_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 email,
                 username,
@@ -74,7 +86,8 @@ router.post('/register', async (req, res) => {
                 smtpConfigured ? 'pending' : 'active',  // pending if email verification needed
                 smtpConfigured ? false : true,           // not verified if email verification needed
                 smtpConfigured ? verificationToken : null,
-                getClientIP(req)
+                getClientIP(req),
+                deviceId || null
             ]
         );
 
@@ -124,7 +137,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', checkVPN, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -230,7 +243,7 @@ router.post('/verify-email', async (req, res) => {
             );
 
             return res.json({ 
-                message: 'Email verified successfully! Welcome to GPT Earn!',
+                message: 'Email verified successfully! Welcome to PrimeLoot!',
                 token: jwtToken,
                 user: {
                     id: user.id,

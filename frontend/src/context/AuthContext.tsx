@@ -79,8 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchUser(data.token);
     };
 
-    const register = async (email: string, username: string, password: string, referralCode?: string) => {
-        const data = await api.register(email, username, password, referralCode);
+    const register = async (email: string, username: string, password: string, referralCode?: string, deviceId?: string) => {
+        const data = await api.register(email, username, password, referralCode, deviceId);
         // If registration returns a token, auto-login
         if (data.token) {
             localStorage.setItem('token', data.token);

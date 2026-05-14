@@ -161,12 +161,13 @@ async function ensureAdminExists() {
             );
             console.log(`👤 Admin user created: ${email}`);
         } else {
-            // Always reset password & ensure active status on startup
+            // Ensure admin is active but DO NOT reset password
+            // (password can now be changed from the Settings page)
             await pool.query(
-                'UPDATE admin_users SET password_hash = ?, status = ? WHERE email = ?',
-                [hash, 'active', email]
+                'UPDATE admin_users SET status = ? WHERE email = ? AND status != ?',
+                ['active', email, 'active']
             );
-            console.log(`👤 Admin user verified & password synced: ${email}`);
+            console.log(`👤 Admin user verified: ${email}`);
         }
     } catch (error) {
         console.error('⚠️  Admin setup warning:', error.message);

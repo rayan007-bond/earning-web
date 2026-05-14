@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import {
     Save, Loader2, Settings,
-    DollarSign, Clock, Users, Crown
+    DollarSign, Clock, Users, Crown, Lock
 } from 'lucide-react';
 
 interface SiteSettings {
@@ -15,6 +15,12 @@ interface SiteSettings {
     minWithdrawal: number;
     referralCommission: number;
     vipUnlimited: boolean;
+    withdrawalMethods?: {
+        id: string;
+        name: string;
+        minAmount: number;
+        feePercent: number;
+    }[];
 }
 
 export default function AdminSettingsPage() {
@@ -22,6 +28,11 @@ export default function AdminSettingsPage() {
     const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Password state
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
 
     const [settings, setSettings] = useState<SiteSettings>({
         dailyTaskLimit: 6,
@@ -30,6 +41,12 @@ export default function AdminSettingsPage() {
         minWithdrawal: 5,
         referralCommission: 10,
         vipUnlimited: true,
+        withdrawalMethods: [
+            { id: 'jazzcash', name: 'JazzCash', minAmount: 1, feePercent: 0 },
+            { id: 'easypaisa', name: 'Easypaisa', minAmount: 1, feePercent: 0 },
+            { id: 'usdt_trc20', name: 'USDT (TRC20)', minAmount: 5, feePercent: 2 },
+            { id: 'binance_pay', name: 'Binance Pay', minAmount: 2, feePercent: 0 }
+        ]
     });
 
     useEffect(() => {
@@ -85,6 +102,49 @@ export default function AdminSettingsPage() {
         }
     };
 
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (newPassword.length < 6) {
+            showToast('Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showToast('Passwords do not match', 'error');
+            return;
+        }
+
+        const token = localStorage.getItem('adminToken');
+        if (!token) return;
+
+        setIsChangingPassword(true);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/admin/change-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ newPassword }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to change password');
+            }
+
+            showToast('Password updated successfully!', 'success');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            showToast(error.message || 'Failed to change password', 'error');
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -95,7 +155,7 @@ export default function AdminSettingsPage() {
 
     return (
         <div className="p-4 md:p-8">
-            <div className="max-w-2xl mx-auto">
+            <div className="w-full">
                 <div className="flex items-center gap-3 mb-6">
                     <h1 className="text-2xl font-bold">Settings</h1>
                 </div>
@@ -169,7 +229,7 @@ export default function AdminSettingsPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm text-[var(--muted)] mb-1 block">Min Withdrawal ($)</label>
+                                <label className="text-sm text-[var(--muted)] mb-1 block">Global Min Withdrawal ($)</label>
                                 <input
                                     type="number"
                                     value={settings.minWithdrawal}
@@ -178,6 +238,7 @@ export default function AdminSettingsPage() {
                                     step="0.01"
                                     min="0"
                                 />
+                                <p className="text-xs text-[var(--muted)] mt-1">Default if method specific is not set</p>
                             </div>
                             <div>
                                 <label className="text-sm text-[var(--muted)] mb-1 block">Referral Commission (%)</label>
@@ -190,6 +251,48 @@ export default function AdminSettingsPage() {
                                     min="0"
                                     max="100"
                                 />
+                            </div>
+                        </div>
+
+                        {/* Dynamic Withdrawal Methods */}
+                        <div className="mt-6 border-t border-[var(--card-border)] pt-6">
+                            <h3 className="font-medium mb-4 text-sm text-[var(--muted)]">Payment Method Overrides</h3>
+                            <div className="space-y-4">
+                                {settings.withdrawalMethods?.map((method, index) => (
+                                    <div key={method.id} className="grid grid-cols-3 gap-4 items-center bg-[var(--card-bg)] border border-[var(--card-border)] p-3 rounded-lg">
+                                        <div className="font-medium text-sm">{method.name}</div>
+                                        <div>
+                                            <label className="text-xs text-[var(--muted)] mb-1 block">Min ($)</label>
+                                            <input
+                                                type="number"
+                                                value={method.minAmount}
+                                                onChange={(e) => {
+                                                    const newMethods = [...(settings.withdrawalMethods || [])];
+                                                    newMethods[index].minAmount = parseFloat(e.target.value);
+                                                    setSettings({ ...settings, withdrawalMethods: newMethods });
+                                                }}
+                                                className="input py-1.5 text-sm"
+                                                step="0.01"
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-[var(--muted)] mb-1 block">Fee (%)</label>
+                                            <input
+                                                type="number"
+                                                value={method.feePercent}
+                                                onChange={(e) => {
+                                                    const newMethods = [...(settings.withdrawalMethods || [])];
+                                                    newMethods[index].feePercent = parseFloat(e.target.value);
+                                                    setSettings({ ...settings, withdrawalMethods: newMethods });
+                                                }}
+                                                className="input py-1.5 text-sm"
+                                                step="0.1"
+                                                min="0"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -212,6 +315,51 @@ export default function AdminSettingsPage() {
                             />
                             <span>VIP users have unlimited daily tasks</span>
                         </label>
+                    </div>
+
+                    {/* Security */}
+                    <div className="card">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 rounded-lg bg-red-500/10">
+                                <Lock size={20} className="text-red-500" />
+                            </div>
+                            <h2 className="font-semibold">Security</h2>
+                        </div>
+                        
+                        <form onSubmit={handlePasswordChange} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm text-[var(--muted)] mb-1 block">New Password</label>
+                                    <input
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="input"
+                                        placeholder="Enter new admin password"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm text-[var(--muted)] mb-1 block">Confirm Password</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="input"
+                                        placeholder="Confirm new admin password"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    disabled={isChangingPassword || !newPassword || !confirmPassword}
+                                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isChangingPassword ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+                                    Update Password
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
                     {/* Save Button */}

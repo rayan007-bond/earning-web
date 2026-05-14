@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (NEVER push these)
+.env
+.env.local
+.env.production
+backend/.env
+
+# Next.js build
+frontend/.next/
+frontend/out/
+
+# Uploads (user-generated content)
+backend/uploads/vip-screenshots/*
+!backend/uploads/vip-screenshots/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

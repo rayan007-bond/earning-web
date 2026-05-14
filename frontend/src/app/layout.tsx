@@ -14,13 +14,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GPT Earn - Earn Money Online",
+  title: "PrimeLoot - Earn Money Online",
   description: "Complete tasks, earn rewards. The easiest way to earn money online.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "GPT Earn",
+    title: "PrimeLoot",
   },
   formatDetection: {
     telephone: false,

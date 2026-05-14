@@ -17,7 +17,7 @@ const sendEmail = async (to, subject, html) => {
     try {
         const fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER;
         const mailOptions = {
-            from: `"GPT Earn" <${fromEmail}>`,
+            from: `"PrimeLoot" <${fromEmail}>`,
             to,
             subject,
             html
@@ -35,7 +35,7 @@ const sendVerificationEmail = async (email, token) => {
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-                <h1 style="color: white; margin: 0;">GPT Earn</h1>
+                <h1 style="color: white; margin: 0;">PrimeLoot</h1>
             </div>
             <div style="padding: 30px; background: #f9fafb;">
                 <h2 style="color: #1f2937; text-align: center;">Verify Your Email</h2>
@@ -53,16 +53,17 @@ const sendVerificationEmail = async (email, token) => {
         </div>
     `;
 
-    return sendEmail(email, 'Verify Your Email - GPT Earn', html);
+    return sendEmail(email, 'Verify Your Email - PrimeLoot', html);
 };
 
 const sendPasswordResetEmail = async (email, token) => {
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-                <h1 style="color: white; margin: 0;">GPT Earn</h1>
+                <h1 style="color: white; margin: 0;">PrimeLoot</h1>
             </div>
             <div style="padding: 30px; background: #f9fafb;">
                 <h2 style="color: #1f2937;">Reset Your Password</h2>
@@ -75,7 +76,7 @@ const sendPasswordResetEmail = async (email, token) => {
         </div>
     `;
 
-    return sendEmail(email, 'Reset Your Password - GPT Earn', html);
+    return sendEmail(email, 'Reset Your Password - PrimeLoot', html);
 };
 
 const sendWithdrawalNotification = async (email, status, amount) => {
@@ -89,7 +90,7 @@ const sendWithdrawalNotification = async (email, status, amount) => {
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-                <h1 style="color: white; margin: 0;">GPT Earn</h1>
+                <h1 style="color: white; margin: 0;">PrimeLoot</h1>
             </div>
             <div style="padding: 30px; background: #f9fafb;">
                 <h2 style="color: #1f2937;">Withdrawal Update</h2>
@@ -102,12 +103,36 @@ const sendWithdrawalNotification = async (email, status, amount) => {
         </div>
     `;
 
-    return sendEmail(email, `Withdrawal ${status.charAt(0).toUpperCase() + status.slice(1)} - GPT Earn`, html);
+    return sendEmail(email, `Withdrawal ${status.charAt(0).toUpperCase() + status.slice(1)} - PrimeLoot`, html);
+};
+
+const sendDailyTasksEmail = async (email, username, newTasksCount) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const loginUrl = `${frontendUrl}/login`;
+
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0;">PrimeLoot</h1>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+                <h2 style="color: #1f2937;">Hello ${username}!</h2>
+                <p style="color: #6b7280;">Good news! There are <strong>${newTasksCount} new tasks</strong> waiting for you on PrimeLoot.</p>
+                <p style="color: #6b7280;">Log in now to complete them and earn money before they expire.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${loginUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">Start Earning</a>
+                </div>
+            </div>
+        </div>
+    `;
+
+    return sendEmail(email, 'New Tasks Available! - PrimeLoot', html);
 };
 
 module.exports = {
     sendEmail,
     sendVerificationEmail,
     sendPasswordResetEmail,
-    sendWithdrawalNotification
+    sendWithdrawalNotification,
+    sendDailyTasksEmail
 };

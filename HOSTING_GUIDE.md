@@ -1,4 +1,4 @@
-# 🌐 GPT Earn - InfinityFree Hosting Guide
+# 🌐 PrimeLoot - InfinityFree Hosting Guide
 
 ## ⚠️ IMPORTANT: InfinityFree Limitations
 

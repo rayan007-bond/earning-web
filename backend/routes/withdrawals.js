@@ -4,6 +4,15 @@ const { authMiddleware } = require('../middleware/auth');
 const { getWithdrawalFee, getMinWithdrawal } = require('../services/vipService');
 const { sendWithdrawalNotification } = require('../services/emailService');
 
+// Helper to get dynamic withdrawal config
+const getDynamicMethods = async () => {
+    const [settings] = await pool.query('SELECT setting_value FROM site_settings WHERE setting_key = "withdrawal_methods"');
+    if (settings.length > 0 && settings[0].setting_value) {
+        try { return JSON.parse(settings[0].setting_value); } catch (e) { return []; }
+    }
+    return [];
+};
+
 const router = express.Router();
 
 // Get withdrawal info (fees, minimum, methods)
@@ -32,6 +41,26 @@ router.get('/info', authMiddleware, async (req, res) => {
         // Get fee info for current balance
         const feeInfo = await getWithdrawalFee(userId, balance);
 
+        // Get dynamic withdrawal methods
+        const dynamicMethods = await getDynamicMethods();
+
+        const baseMethods = [
+            { id: 'jazzcash', name: 'JazzCash', icon: 'phone', fields: ['accountNumber'] },
+            { id: 'easypaisa', name: 'Easypaisa', icon: 'phone', fields: ['accountNumber'] },
+            { id: 'usdt_trc20', name: 'USDT (TRC20)', icon: 'wallet', fields: ['walletAddress'] },
+            { id: 'binance_pay', name: 'Binance Pay', icon: 'currency-dollar', fields: ['binanceId', 'email'] }
+        ];
+
+        // Merge base fields with dynamic config (minAmount, feePercent)
+        const paymentMethods = baseMethods.map(base => {
+            const dynamic = dynamicMethods.find(d => d.id === base.id);
+            return {
+                ...base,
+                minAmount: dynamic?.minAmount !== undefined ? dynamic.minAmount : minWithdrawal,
+                feePercent: dynamic?.feePercent !== undefined ? dynamic.feePercent : feeInfo.feePercentage
+            };
+        });
+
         res.json({
             balance,
             minWithdrawal,
@@ -41,12 +70,7 @@ router.get('/info', authMiddleware, async (req, res) => {
             referralCount: referrals,
             requiredReferrals,
             canWithdraw,
-            paymentMethods: [
-                { id: 'jazzcash', name: 'JazzCash', icon: 'phone', fields: ['accountNumber'] },
-                { id: 'easypaisa', name: 'Easypaisa', icon: 'phone', fields: ['accountNumber'] },
-                { id: 'usdt_trc20', name: 'USDT (TRC20)', icon: 'wallet', fields: ['walletAddress'] },
-                { id: 'binance_pay', name: 'Binance Pay', icon: 'currency-dollar', fields: ['binanceId', 'email'] }
-            ]
+            paymentMethods
         });
 
     } catch (error) {
@@ -58,19 +82,32 @@ router.get('/info', authMiddleware, async (req, res) => {
 // Calculate withdrawal fee
 router.post('/calculate', authMiddleware, async (req, res) => {
     try {
-        const { amount } = req.body;
+        const { amount, method } = req.body;
 
         if (!amount || amount <= 0) {
             return res.status(400).json({ error: 'Valid amount is required' });
         }
 
         const feeInfo = await getWithdrawalFee(req.user.id, parseFloat(amount));
+        let finalFee = feeInfo.fee;
+        let finalFeePercentage = feeInfo.feePercentage;
+        let finalNetAmount = feeInfo.netAmount;
+
+        if (method) {
+            const dynamicMethods = await getDynamicMethods();
+            const config = dynamicMethods.find(d => d.id === method);
+            if (config && config.feePercent !== undefined) {
+                finalFeePercentage = config.feePercent;
+                finalFee = parseFloat(amount) * (finalFeePercentage / 100);
+                finalNetAmount = parseFloat(amount) - finalFee;
+            }
+        }
 
         res.json({
             amount: parseFloat(amount),
-            fee: feeInfo.fee,
-            feePercentage: feeInfo.feePercentage,
-            netAmount: feeInfo.netAmount,
+            fee: finalFee,
+            feePercentage: finalFeePercentage,
+            netAmount: finalNetAmount,
             isVIP: feeInfo.isVIP
         });
 
@@ -132,12 +169,19 @@ router.post('/request', authMiddleware, async (req, res) => {
         }
 
         // Check minimum withdrawal
-        const minWithdrawal = await getMinWithdrawal(userId);
+        let minWithdrawal = await getMinWithdrawal(userId);
+        
+        // Apply dynamic method overrides
+        const dynamicMethods = await getDynamicMethods();
+        const config = dynamicMethods.find(d => d.id === paymentMethod);
+        if (config) {
+            if (config.minAmount !== undefined) minWithdrawal = config.minAmount;
+        }
 
         if (requestAmount < minWithdrawal) {
             await connection.rollback();
             return res.status(400).json({
-                error: `Minimum withdrawal amount is $${minWithdrawal.toFixed(2)}`,
+                error: `Minimum withdrawal amount for this method is $${minWithdrawal.toFixed(2)}`,
                 minWithdrawal
             });
         }
@@ -155,29 +199,36 @@ router.post('/request', authMiddleware, async (req, res) => {
 
         // Calculate fee
         const feeInfo = await getWithdrawalFee(userId, requestAmount);
+        let finalFee = feeInfo.fee;
+        let finalNetAmount = feeInfo.netAmount;
+
+        if (config && config.feePercent !== undefined) {
+            finalFee = requestAmount * (config.feePercent / 100);
+            finalNetAmount = requestAmount - finalFee;
+        }
 
         // Deduct from balance and add to pending
         await connection.query(
             'UPDATE users SET balance = balance - ?, pending_balance = pending_balance + ? WHERE id = ?',
-            [requestAmount, feeInfo.netAmount, userId]
+            [requestAmount, finalNetAmount, userId]
         );
 
         // Create withdrawal request
         const [result] = await connection.query(
             `INSERT INTO withdrawals (user_id, amount, fee, net_amount, payment_method, payment_details, status)
              VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-            [userId, requestAmount, feeInfo.fee, feeInfo.netAmount, paymentMethod, JSON.stringify(paymentDetails)]
+            [userId, requestAmount, finalFee, finalNetAmount, paymentMethod, JSON.stringify(paymentDetails)]
         );
 
         // Create notification
         await connection.query(
             `INSERT INTO notifications (user_id, title, message, type)
              VALUES (?, 'Withdrawal Requested', ?, 'info')`,
-            [userId, `Your withdrawal request for $${feeInfo.netAmount.toFixed(2)} is pending approval.`]
+            [userId, `Your withdrawal request for $${finalNetAmount.toFixed(2)} is pending approval.`]
         );
 
         // Send email notification
-        await sendWithdrawalNotification(req.user.email, 'pending', feeInfo.netAmount);
+        await sendWithdrawalNotification(req.user.email, 'pending', finalNetAmount);
 
         await connection.commit();
 
@@ -187,8 +238,8 @@ router.post('/request', authMiddleware, async (req, res) => {
             withdrawal: {
                 id: result.insertId,
                 amount: requestAmount,
-                fee: feeInfo.fee,
-                netAmount: feeInfo.netAmount,
+                fee: finalFee,
+                netAmount: finalNetAmount,
                 status: 'pending'
             }
         });

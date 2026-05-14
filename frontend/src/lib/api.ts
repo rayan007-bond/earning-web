@@ -53,10 +53,10 @@ class ApiClient {
     }
 
     // Auth endpoints
-    async register(email: string, username: string, password: string, referralCode?: string) {
-        return this.request<{ token?: string; user?: any; message: string }>('/auth/register', {
+    async register(email: string, username: string, password: string, referralCode?: string, deviceId?: string) {
+        return this.request<{ token?: string; user?: any; message: string; requiresVerification?: boolean }>('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ email, username, password, referralCode }),
+            body: JSON.stringify({ email, username, password, referralCode, deviceId }),
         });
     }
 

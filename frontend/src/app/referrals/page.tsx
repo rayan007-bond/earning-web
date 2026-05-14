@@ -79,7 +79,7 @@ export default function ReferralsPage() {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Join GPT Earn',
+                    title: 'Join PrimeLoot',
                     text: 'Earn money by completing simple tasks! Use my referral link:',
                     url: referralLink
                 });

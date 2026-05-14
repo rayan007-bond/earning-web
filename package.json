@@ -1,7 +1,7 @@
 {
     "name": "gpt-earn",
     "version": "1.0.0",
-    "description": "GPT Earn - Complete Earning Platform",
+    "description": "PrimeLoot - Complete Earning Platform",
     "scripts": {
         "start": "node server.js",
         "install-backend": "cd backend && npm install",

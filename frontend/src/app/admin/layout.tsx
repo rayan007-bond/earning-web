@@ -35,12 +35,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Sidebar */}
             <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[var(--card-bg)] border-r border-[var(--card-border)] p-4 hidden md:block z-50">
                 <div className="flex items-center gap-3 mb-8">
-                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                        <span className="text-xl">💰</span>
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-white/5 p-1">
+                        <img src="/logo.png" alt="PrimeLoot Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
-                        <h1 className="font-bold">GPT Earn</h1>
-                        <p className="text-xs text-[var(--muted)]">Admin Panel</p>
+                        <h1 className="font-bold text-lg tracking-tight">PrimeLoot</h1>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-[var(--primary)]">Admin Panel</p>
                     </div>
                 </div>
 
@@ -76,7 +76,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Mobile Nav Header (Optional, for future) */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[var(--card-bg)] border-b border-[var(--card-border)] flex items-center px-4 z-50 justify-between">
                 <div className="flex items-center gap-2">
-                    <span className="text-xl">💰</span>
+                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10">
+                        <img src="/logo.png" alt="PrimeLoot Logo" className="w-full h-full object-cover" />
+                    </div>
                     <h1 className="font-bold">Admin Panel</h1>
                 </div>
                 <button onClick={handleLogout} className="text-red-500">

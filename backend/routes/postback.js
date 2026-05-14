@@ -179,7 +179,7 @@ router.get('/:network', async (req, res) => {
         const adminProfit = parseFloat((amount - creditedAmount).toFixed(4));
         
         const isChargeback = amount < 0;
-        const txStatus = isChargeback ? 'chargeback' : 'credited';
+        const txStatus = isChargeback ? 'rejected' : 'credited';
 
         // 9. Start transaction
         const connection = await pool.getConnection();
@@ -208,19 +208,32 @@ router.get('/:network', async (req, res) => {
             );
 
             // Process referral commission (if user was referred)
-            if (user.referred_by) {
-                const referralCommission = creditedAmount * 0.05; // 5% of credited amount
-
-                await connection.query(
-                    'UPDATE users SET balance = balance + ?, referral_earnings = referral_earnings + ? WHERE id = ?',
-                    [referralCommission, referralCommission, user.referred_by]
+            if (user.referred_by && !isChargeback) {
+                // Get commission rate from referrals table
+                const [refInfo] = await connection.query(
+                    'SELECT commission_rate FROM referrals WHERE referrer_id = ? AND referred_id = ? AND is_active = TRUE',
+                    [user.referred_by, userId]
                 );
 
-                await connection.query(
-                    `INSERT INTO referral_earnings (referrer_id, referred_id, amount, source_type, source_id)
-                     VALUES (?, ?, ?, 'offerwall', ?)`,
-                    [user.referred_by, userId, referralCommission, transactionId]
-                );
+                if (refInfo.length > 0) {
+                    const commissionRate = parseFloat(refInfo[0].commission_rate) || 10;
+                    const referralCommission = creditedAmount * (commissionRate / 100);
+
+                    await connection.query(
+                        'UPDATE users SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?',
+                        [referralCommission, referralCommission, user.referred_by]
+                    );
+
+                    await connection.query(
+                        'UPDATE referrals SET total_commission_earned = total_commission_earned + ? WHERE referrer_id = ? AND referred_id = ?',
+                        [referralCommission, user.referred_by, userId]
+                    );
+
+                    await connection.query(
+                        'INSERT INTO earnings_logs (user_id, amount, source_type, source_id, description) VALUES (?, ?, "referral", ?, ?)',
+                        [user.referred_by, referralCommission, userId, `Offerwall referral commission from ${networkConfig.display_name}`]
+                    );
+                }
             }
 
             // Create notification for user

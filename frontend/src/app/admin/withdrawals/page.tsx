@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import {
     CheckCircle, XCircle, Clock,
-    Phone, Bitcoin, CreditCard, Loader2
+    Phone, Bitcoin, CreditCard, Loader2, Download
 } from 'lucide-react';
 
 interface Withdrawal {
@@ -91,6 +91,47 @@ export default function AdminWithdrawalsPage() {
         }
     };
 
+    const exportToCSV = () => {
+        if (withdrawals.length === 0) {
+            showToast('No data to export', 'error');
+            return;
+        }
+
+        const headers = ['ID', 'User ID', 'Username', 'Email', 'Amount ($)', 'Fee ($)', 'Net Amount ($)', 'Payment Method', 'Payment Details', 'Status', 'Date'];
+        
+        const csvRows = withdrawals.map(w => {
+            const details = typeof w.payment_details === 'string' ? w.payment_details : JSON.stringify(w.payment_details);
+            // Escape quotes and wrap in quotes to handle commas in JSON string
+            const safeDetails = `"${details.replace(/"/g, '""')}"`;
+            
+            return [
+                w.id,
+                w.user_id,
+                w.username,
+                w.email,
+                w.amount,
+                w.fee,
+                w.net_amount,
+                w.payment_method,
+                safeDetails,
+                w.status,
+                new Date(w.created_at).toLocaleString()
+            ].join(',');
+        });
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `withdrawals_${filter}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const methodIcons: Record<string, any> = {
         jazzcash: Phone,
         easypaisa: Phone,
@@ -116,25 +157,35 @@ export default function AdminWithdrawalsPage() {
 
     return (
         <div className="p-4 md:p-8">
-            <div className="max-w-5xl mx-auto">
+            <div className="w-full">
                 <div className="flex items-center gap-3 mb-6">
                     <h1 className="text-2xl font-bold">Withdrawals</h1>
                 </div>
 
-                {/* Filter Tabs */}
-                <div className="flex gap-2 mb-6">
-                    {['pending', 'approved', 'completed', 'rejected'].map((status) => (
-                        <button
-                            key={status}
-                            onClick={() => setFilter(status)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === status
-                                ? 'bg-[var(--primary)] text-white'
-                                : 'bg-[var(--card-bg)] border border-[var(--card-border)]'
-                                }`}
-                        >
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                    ))}
+                {/* Filter Tabs & Export */}
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex gap-2">
+                        {['pending', 'approved', 'completed', 'rejected'].map((status) => (
+                            <button
+                                key={status}
+                                onClick={() => setFilter(status)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === status
+                                    ? 'bg-[var(--primary)] text-white'
+                                    : 'bg-[var(--card-bg)] border border-[var(--card-border)]'
+                                    }`}
+                            >
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                    
+                    <button
+                        onClick={exportToCSV}
+                        className="flex items-center gap-2 px-4 py-2 bg-[var(--card-bg)] border border-[var(--card-border)] hover:border-[var(--primary)] text-[var(--primary)] rounded-lg text-sm font-bold transition-all shadow-sm"
+                    >
+                        <Download size={16} />
+                        Export CSV
+                    </button>
                 </div>
 
                 {/* Withdrawals List */}

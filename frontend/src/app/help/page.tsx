@@ -9,20 +9,24 @@ export default function HelpPage() {
 
     const faqs = [
         {
-            question: "How do I withdraw my earnings?",
-            answer: "You can withdraw your earnings from the Withdraw page once you reach the minimum payout threshold. We support PayPal, Crypto, and Gift Cards."
+            question: "How do I earn money on PrimeLoot?",
+            answer: "You can earn money by completing surveys, watching videos, downloading apps, or doing small social tasks. Just go to the 'Earn' page, pick a task, follow the instructions, and get paid!"
         },
         {
             question: "When will I get paid?",
-            answer: "Standard withdrawals are processed within 24-48 hours. VIP members enjoy instant withdrawals."
+            answer: "Payments are processed within 24-48 hours. If you are a VIP member, your payments are processed with priority. We support JazzCash, EasyPaisa, PayPal, and Crypto."
         },
         {
-            question: "Why was my task rejected?",
-            answer: "Tasks may be rejected by the offerwall provider if the instructions were not followed correctly or if you used a VPN/Proxy."
+            question: "Why was my task rejected or not credited?",
+            answer: "Tasks usually fail to credit if: 1) You used a VPN or Proxy. 2) You didn't complete the full requirements. 3) You already completed this offer on another site."
         },
         {
-            question: "How does the referral program work?",
-            answer: "Share your unique referral link to invite friends. You will earn a 10% commission on all their earnings for life."
+            question: "Can I have multiple accounts?",
+            answer: "No. Creating multiple accounts on the same device or network is strictly forbidden. Our system uses advanced fingerprinting, and violating this rule will result in a permanent ban and loss of all earnings."
+        },
+        {
+            question: "What are the benefits of VIP?",
+            answer: "VIP members enjoy a permanent earning bonus (+20% on all tasks), lower withdrawal limits, faster payouts, and access to exclusive high-paying tasks."
         }
     ];
 

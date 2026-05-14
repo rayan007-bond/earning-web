@@ -147,7 +147,7 @@ function VerifyEmailContent() {
                                     <Sparkles className="text-yellow-500" size={24} />
                                 </div>
 
-                                <p className="text-lg font-medium mb-2">Welcome to GPT Earn! 🎉</p>
+                                <p className="text-lg font-medium mb-2">Welcome to PrimeLoot! 🎉</p>
                                 <p className="text-[var(--muted)] mb-6">
                                     Your account is now active. Start completing tasks and earning real money today!
                                 </p>

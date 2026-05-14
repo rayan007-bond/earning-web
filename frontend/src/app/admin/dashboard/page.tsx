@@ -73,7 +73,7 @@ export default function AdminDashboard() {
 
         setIsBroadcasting(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/admin/users/notify-all`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/admin/broadcast`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

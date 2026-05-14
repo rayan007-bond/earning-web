@@ -51,6 +51,7 @@ interface DailyLimits {
 const taskTypes = [
     { id: 'all', label: 'All', icon: ClipboardList },
     { id: 'watch_ads', label: 'Ads', icon: Play },
+    { id: 'videos', label: 'Videos', icon: Play },
     { id: 'short_links', label: 'Links', icon: LinkIcon },
     { id: 'social_tasks', label: 'Social', icon: Heart },
     { id: 'daily_bonus', label: 'Daily', icon: Gift },
