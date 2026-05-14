@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/Toast';
 import {
     Gift, Settings, BarChart2, DollarSign,
     CheckCircle, XCircle, Loader2, Copy, Save, Eye,
-    EyeOff, ExternalLink, Shield, Plus, Edit2, AlertTriangle, TrendingUp, Clock
+    EyeOff, ExternalLink, Shield, Plus, Edit2, AlertTriangle, TrendingUp, Clock, X
 } from 'lucide-react';
 
 interface OfferwallNetwork {
