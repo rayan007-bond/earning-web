@@ -67,9 +67,6 @@ router.post('/register', checkVPN, async (req, res) => {
         // Generate 6-digit verification OTP
         const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Dynamically reload .env so user doesn't have to restart server locally
-        require('dotenv').config({ override: true });
-
         // Check if SMTP is configured
         const smtpConfigured = process.env.SMTP_USER && process.env.SMTP_PASS;
 
@@ -103,12 +100,41 @@ router.post('/register', checkVPN, async (req, res) => {
 
         // Send verification email if SMTP is configured
         if (smtpConfigured) {
-            await sendVerificationEmail(email, verificationToken);
+            console.log(`[EMAIL] Sending verification to ${email} via ${process.env.SMTP_USER}...`);
+            const emailSent = await sendVerificationEmail(email, verificationToken);
 
-            res.status(201).json({
-                message: 'Registration successful! Please check your email to verify your account.',
-                requiresVerification: true
-            });
+            if (emailSent) {
+                console.log(`[EMAIL] ✅ Verification email sent to ${email}`);
+                res.status(201).json({
+                    message: 'Registration successful! Please check your email to verify your account.',
+                    requiresVerification: true
+                });
+            } else {
+                // Email failed - auto-verify so user isn't stuck
+                console.error(`[EMAIL] ❌ Failed to send verification email to ${email}. Auto-verifying...`);
+                await pool.query(
+                    'UPDATE users SET email_verified = TRUE, status = "active", email_verification_token = NULL WHERE id = ?',
+                    [userId]
+                );
+
+                const token = jwt.sign(
+                    { userId },
+                    process.env.JWT_SECRET,
+                    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+                );
+
+                res.status(201).json({
+                    message: 'Registration successful!',
+                    token,
+                    user: {
+                        id: userId,
+                        email,
+                        username,
+                        balance: 0,
+                        emailVerified: true
+                    }
+                });
+            }
         } else {
             // No SMTP - auto-login for testing
             const token = jwt.sign(
