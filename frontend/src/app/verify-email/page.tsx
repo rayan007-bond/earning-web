@@ -38,7 +38,7 @@ function VerifyEmailContent() {
         setStatus('loading');
         
         try {
-            const response = await api.verifyEmail(email, otp);
+            const response = await api.verifyEmail(email, otp) as any;
             if (response.token) {
                 localStorage.setItem('token', response.token);
             }
