@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import {
     Search, Crown, Ban,
-    CheckCircle, XCircle, DollarSign, Bell, X
+    CheckCircle, XCircle, DollarSign, Bell, X, Trash2
 } from 'lucide-react';
 
 interface User {
@@ -85,6 +85,33 @@ export default function AdminUsersPage() {
             loadUsers(token);
         } catch (error) {
             showToast('Failed to update user', 'error');
+        }
+    };
+
+    const deleteUser = async (userId: number, username: string) => {
+        const confirmDelete = window.confirm(`WARNING: Are you sure you want to completely delete ${username}? This will remove all their earnings, tasks, referrals, and completely erase them from the database. This CANNOT be undone.`);
+        if (!confirmDelete) return;
+
+        const token = localStorage.getItem('adminToken');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to delete user');
+            }
+
+            showToast('User completely deleted from system', 'success');
+            loadUsers(token);
+        } catch (error: any) {
+            showToast(error.message || 'Failed to delete user', 'error');
         }
     };
 
@@ -253,6 +280,13 @@ export default function AdminUsersPage() {
                                                     <CheckCircle size={16} />
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => deleteUser(user.id, user.username)}
+                                                className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg"
+                                                title="Completely Delete User"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
