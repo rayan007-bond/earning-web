@@ -308,7 +308,14 @@ router.delete('/users/:id', adminAuth, superAdminOnly, async (req, res) => {
             ];
             
             for (const table of tablesWithUserRef) {
-                await connection.query(`DELETE FROM ${table} WHERE user_id = ?`, [userId]);
+                try {
+                    await connection.query(`DELETE FROM ${table} WHERE user_id = ?`, [userId]);
+                } catch (err) {
+                    // Ignore error if table doesn't exist in this environment
+                    if (err.code !== 'ER_NO_SUCH_TABLE') {
+                        throw err;
+                    }
+                }
             }
             
             // Referrals table has two references: referrer_id and referred_id
