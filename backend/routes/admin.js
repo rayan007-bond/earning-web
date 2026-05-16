@@ -314,6 +314,9 @@ router.delete('/users/:id', adminAuth, superAdminOnly, async (req, res) => {
             // Referrals table has two references: referrer_id and referred_id
             await connection.query('DELETE FROM referrals WHERE referrer_id = ? OR referred_id = ?', [userId, userId]);
 
+            // Clear the referred_by foreign key in the users table for anyone referred by this user
+            await connection.query('UPDATE users SET referred_by = NULL WHERE referred_by = ?', [userId]);
+
             // Finally delete the user
             await connection.query('DELETE FROM users WHERE id = ?', [userId]);
 
