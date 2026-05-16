@@ -10,7 +10,10 @@ const transporter = nodemailer.createTransport({
     },
     tls: {
         rejectUnauthorized: false
-    }
+    },
+    connectionTimeout: 10000,  // 10 seconds to connect
+    greetingTimeout: 10000,    // 10 seconds for greeting
+    socketTimeout: 15000       // 15 seconds for socket
 });
 
 const sendEmail = async (to, subject, html) => {
@@ -23,10 +26,15 @@ const sendEmail = async (to, subject, html) => {
             html
         };
 
-        await transporter.sendMail(mailOptions);
+        // Race between sending email and a 20-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Email send timed out after 20s')), 20000)
+        );
+
+        await Promise.race([transporter.sendMail(mailOptions), timeoutPromise]);
         return true;
     } catch (error) {
-        console.error('Email send error:', error);
+        console.error('Email send error:', error.message);
         return false;
     }
 };
