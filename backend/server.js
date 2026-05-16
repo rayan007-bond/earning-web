@@ -119,6 +119,14 @@ const startServer = async () => {
     await ensureAdminExists();
     await ensureOfferwallTables();
 
+    // Ensure device_id column exists in users table
+    try {
+        await pool.query('ALTER TABLE users ADD COLUMN device_id VARCHAR(255) DEFAULT NULL');
+        console.log('✅ Added device_id column to users table');
+    } catch (e) {
+        // Column already exists - ignore
+    }
+
     // Start cron jobs
     cronJobs.start();
 
