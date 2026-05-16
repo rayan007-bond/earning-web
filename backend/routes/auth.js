@@ -158,7 +158,7 @@ router.post('/register', checkVPN, async (req, res) => {
 
     } catch (error) {
         console.error('Register error:', error);
-        res.status(500).json({ error: 'Registration failed' });
+        res.status(500).json({ error: `Registration failed: ${error.message}` });
     }
 });
 
