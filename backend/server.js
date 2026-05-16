@@ -84,6 +84,40 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// SMTP diagnostic endpoint (temporary - remove after debugging)
+app.get('/api/smtp-check', async (req, res) => {
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const result = {
+        SMTP_USER_set: !!smtpUser,
+        SMTP_USER_value: smtpUser || 'NOT SET',
+        SMTP_PASS_set: !!smtpPass,
+        SMTP_PASS_length: smtpPass ? smtpPass.replace(/\s+/g, '').length : 0,
+        SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com (default)',
+        SMTP_PORT: process.env.SMTP_PORT || '587 (default)',
+    };
+
+    // Try to verify SMTP connection
+    try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT) || 587,
+            secure: false,
+            auth: { user: smtpUser, pass: smtpPass ? smtpPass.replace(/\s+/g, '') : undefined },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000
+        });
+        await transporter.verify();
+        result.smtp_connection = '✅ VERIFIED';
+    } catch (e) {
+        result.smtp_connection = `❌ FAILED: ${e.message}`;
+    }
+
+    res.json(result);
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
